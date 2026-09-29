@@ -3,6 +3,10 @@
 Newest first. Each release needs a section here: `scripts/release.sh` uses it for the GitHub release
 notes, and Hush shows it in "What's New" after an upgrade and in Settings → Updates.
 
+## 1.1.7
+- **Settings stays open until you click outside it or press Esc.** It could vanish on its own (for
+  example when moving the pointer away) whenever another app or a notification briefly took focus.
+
 ## 1.1.6
 - **One thing at a time after an update or first launch.** If something needs permission, only the
   Setup checklist opens (it asks for each permission when you press Allow); What's New or the welcome
