@@ -30,8 +30,15 @@ enum SettingsTab: Hashable, CaseIterable {
 
 /// One page of the Settings window (the window's toolbar switches pages). Every toggle writes straight to UserDefaults; the engine
 /// reads them on its next tick (twice a second), so changes apply immediately.
+/// Which Settings page is showing; the window's toolbar sets it.
+@MainActor
+final class SettingsNavigation: ObservableObject {
+    @Published var page: SettingsTab = .general
+}
+
 struct SettingsView: View {
-    let page: SettingsTab
+    @ObservedObject var navigation: SettingsNavigation
+    private var page: SettingsTab { navigation.page }
     var showWelcome: @MainActor () -> Void = {}
     var showSetup: @MainActor () -> Void = {}
     var setupNeeded: @MainActor () -> Bool = { false }
@@ -72,10 +79,13 @@ struct SettingsView: View {
             case .about: AboutView(showWhatsNew: showWhatsNew)
             }
         }
-        .frame(width: 560, height: 580)
+        .frame(width: 640, height: 640)
         .onAppear {
             needsSetup = setupNeeded()
             if page == .permissions { loadPermissions() }
+        }
+        .onChange(of: navigation.page) { newPage in
+            if newPage == .permissions { loadPermissions() }
         }
         .onReceive(refresh) { _ in
             if page == .permissions { loadPermissions() }

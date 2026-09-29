@@ -327,31 +327,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         DispatchQueue.main.async { [weak self] in self?.present(self?.makeSettingsWindow()) }
     }
 
-    private var settingsTabs: NSTabViewController?
+    private let settingsNavigation = SettingsNavigation()
+    private var settingsToolbar: SettingsToolbar?
 
     private func makeSettingsWindow() -> NSWindow {
         if let settingsWindow { return settingsWindow }
-        let tabs = NSTabViewController()
-        tabs.tabStyle = .toolbar
-        tabs.transitionOptions = [.allowUserInteraction] // no cross-fade: switching is instant
-        for page in SettingsTab.allCases {
-            let view = SettingsView(page: page,
-                                    showWelcome: { [weak self] in self?.showWelcome() },
-                                    showSetup: { [weak self] in self?.openSetup() },
-                                    setupNeeded: { AppDelegate.setupNeeded },
-                                    showWhatsNew: { [weak self] in self?.showWhatsNew(since: nil) },
-                                    updates: updates)
-            let item = NSTabViewItem(viewController: NSHostingController(rootView: view))
-            item.label = page.title
-            item.image = NSImage(systemSymbolName: page.symbol, accessibilityDescription: page.title)
-            tabs.addTabViewItem(item)
-        }
-        let window = NSWindow(contentViewController: tabs)
+        let view = SettingsView(navigation: settingsNavigation,
+                                showWelcome: { [weak self] in self?.showWelcome() },
+                                showSetup: { [weak self] in self?.openSetup() },
+                                setupNeeded: { AppDelegate.setupNeeded },
+                                showWhatsNew: { [weak self] in self?.showWhatsNew(since: nil) },
+                                updates: updates)
+        let window = NSWindow(contentViewController: NSHostingController(rootView: view))
         window.styleMask = [.titled, .closable, .miniaturizable]
-        window.toolbarStyle = .preference
         window.isReleasedWhenClosed = false
+        let toolbar = SettingsToolbar(navigation: settingsNavigation, window: window)
+        window.toolbar = toolbar.toolbar
+        window.toolbarStyle = .preference
+        toolbar.select(settingsNavigation.page)
         window.center()
-        settingsTabs = tabs
+        settingsToolbar = toolbar
         settingsWindow = window
         return window
     }
@@ -368,7 +363,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
 
     private func showSettings(tab: SettingsTab) {
         let window = makeSettingsWindow()
-        settingsTabs?.selectedTabViewItemIndex = SettingsTab.allCases.firstIndex(of: tab) ?? 0
+        settingsToolbar?.select(tab)
         DispatchQueue.main.async { [weak self] in self?.present(window) }
     }
 
