@@ -3,7 +3,7 @@
 Newest first. Each release needs a section here: `scripts/release.sh` uses it for the GitHub release
 notes, and Hush shows it in "What's New" after an upgrade and in Settings → Updates.
 
-## 1.1.12
+## 1.1.13
 - **Fixed: a “call” that never ended.** macOS's own speech service (com.apple.CoreSpeech, used by Siri,
   “Hey Siri” and dictation) keeps the microphone open and was taken for a call, so the camera stayed on,
   a real call didn't count as a new one, and Spotify and your meeting weren't handled. macOS's
@@ -14,6 +14,9 @@ notes, and Hush shows it in "What's New" after an upgrade and in Settings → Up
 - The menu stays live while it's open, and detection keeps running meanwhile.
 - **Runs on Intel Macs again.** Releases are built for both Apple Silicon and Intel even on a Mac with
   only the Command Line Tools (each chip is built separately and joined), instead of Apple Silicon only.
+- About and Camera Preview say which phone detector is in use (full YOLOv3 or Tiny).
+
+## 1.1.12
 - **Add any call app yourself** (Settings → Calls & Media → Other call apps → Add App…). Its microphone
   use then counts as a call, and Over&Out asks for the permission it needs (Accessibility) right away.
   If the app's camera or mute isn't switched off when you step away, start a call in it and press
