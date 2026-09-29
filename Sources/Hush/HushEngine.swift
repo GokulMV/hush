@@ -24,6 +24,9 @@ final class HushEngine {
     var onChange: (@MainActor () -> Void)?
 
     var isSensing: Bool { sensor.isRunning }
+    /// The camera session is running but no video is arriving (see the watchdog in updateSensing).
+    var cameraStalled: Bool { sensor.isStalled }
+    private var lastCameraRestart = Date.distantPast
     var panicActive: Bool { ledger.isEngaged(.panic) }
 
     private let settings: Settings
@@ -161,6 +164,13 @@ final class HushEngine {
             || callPhase == .inCall
             || anyMediaAudible
             || ledger.isEngaged(.away) || ledger.isEngaged(.phone)
+
+        // Watchdog: a session that runs but delivers no frames can't see you leave. Restart it
+        // (at most every 10 s) instead of silently watching nothing.
+        if sensor.isStalled && now.timeIntervalSince(lastCameraRestart) > 10 {
+            lastCameraRestart = now
+            sensor.restart()
+        }
 
         if needed {
             sensingIdleSince = nil

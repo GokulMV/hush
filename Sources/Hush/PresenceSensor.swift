@@ -64,6 +64,7 @@ final class PresenceSensor: NSObject, AVCaptureVideoDataOutputSampleBufferDelega
         }
         guard configured || configure() else { return }
         startedAt = Date()
+        runningSince = Date()
         isRunning = true
         queue.async { self.session.startRunning() }
     }
@@ -97,9 +98,30 @@ final class PresenceSensor: NSObject, AVCaptureVideoDataOutputSampleBufferDelega
 
     private let imageContext = CIContext()
 
+    /// When the camera last delivered a frame (any frame, analysed or not).
+    private(set) var lastFrameAt = Date.distantPast
+    private(set) var runningSince = Date.distantPast
+
+    /// Started a while ago but no frames lately: the session is stuck (e.g. another app grabbed the
+    /// camera in a way that starves Hush). The engine restarts it and says so in the menu.
+    var isStalled: Bool {
+        isRunning && Date().timeIntervalSince(runningSince) > 4 && Date().timeIntervalSince(lastFrameAt) > 4
+    }
+
+    /// Stops and starts the capture session again.
+    func restart() {
+        guard isRunning else { return }
+        runningSince = Date()
+        queue.async {
+            self.session.stopRunning()
+            self.session.startRunning()
+        }
+    }
+
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         // The camera delivers ~30 fps; four looks per second are plenty and keep CPU low.
         let now = Date()
+        lastFrameAt = now
         guard now.timeIntervalSince(lastAnalysis) >= 0.25,
               let pixels = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
         lastAnalysis = now

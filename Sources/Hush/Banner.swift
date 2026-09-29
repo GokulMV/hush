@@ -24,6 +24,17 @@ final class Banner {
         }
     }
 
+    /// When Hush is opened again while it's already running (Finder, Spotlight, Launchpad).
+    func showAlreadyRunning(below anchor: NSStatusBarButton?, openSettings: @escaping () -> Void) {
+        show(below: anchor, dismissAfter: 8) { close in
+            BannerView(title: "Hush is already running",
+                       message: "It lives in your menu bar, up here. Click its icon for status and quick controls.",
+                       shortcuts: [],
+                       primary: ("Open Settings", { close(); openSettings() }),
+                       secondary: ("OK", close))
+        }
+    }
+
     func showRunningToast(below anchor: NSStatusBarButton?) {
         show(below: anchor, dismissAfter: 3) { close in
             BannerView(title: "Hush is running", message: "It's in your menu bar.", shortcuts: [],

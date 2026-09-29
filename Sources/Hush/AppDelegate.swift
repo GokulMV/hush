@@ -51,7 +51,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     /// Opening the app again (Finder, Spotlight, Launchpad): Setup while something is missing,
     /// otherwise Settings.
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        if Self.setupNeeded { openSetup() } else { openSettings() }
+        // A menu-bar app has no main window: point at the icon instead of popping Settings open.
+        if Self.setupNeeded {
+            openSetup()
+        } else {
+            banner.showAlreadyRunning(below: statusItem.button) { [weak self] in self?.openSettings() }
+        }
         return false
     }
 
@@ -225,6 +230,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         if let until = settings.cameraPausedUntil {
             return "📷  Hush camera: paused until \(until.formatted(date: .omitted, time: .shortened))"
         }
+        if engine.cameraStalled { return "📷  Hush camera: not receiving video (restarting…)" }
         if engine.isSensing { return "📷  Hush camera: watching (green light on)" }
         return "📷  Hush camera: on, waits for a call or video"
     }

@@ -8,6 +8,9 @@ notes, and Hush shows it in "What's New" after an upgrade and in Settings → Up
   the meeting tab is in the background. If the browser holds the change back (background tabs are
   throttled), Hush brings the meeting tab to the front to finish it.
 - Homebrew: Apple-Silicon-only builds are marked as such, so Intel Macs get a clear message.
+- **Camera watchdog**: if the camera stops delivering video (e.g. while another app such as Zoom holds it),
+  Hush restarts it instead of silently watching nothing, and the menu says so.
+- Opening Hush while it's already running points at its menu-bar icon instead of opening Settings.
 
 ## 1.0.0 — first release
 - **Presence**: pauses videos, mutes your mic and turns off your meeting camera when you step away, and
