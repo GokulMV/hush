@@ -11,6 +11,8 @@ notes, and Hush shows it in "What's New" after an upgrade and in Settings → Up
 - **The camera no longer stays on for a browser that isn't playing anything.** Browsers keep the
   speakers open for paused videos and some websites; Over&Out now checks the tab bar and ignores a
   quiet browser (and nameless background helpers). The menu's “Camera sees” line says why it's on.
+- **Settings drops down from the menu-bar icon**, like other menu-bar apps: no window buttons, and it
+  closes when you click elsewhere. Cleaner icon tabs replace the old segmented tab bar.
 
 ## 1.1.3
 - **Permissions now survive updates.** Releases are signed with the same certificate every time, so

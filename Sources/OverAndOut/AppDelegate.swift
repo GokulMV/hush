@@ -10,6 +10,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     private var lastIcon = ""
     private var appearanceObservation: NSKeyValueObservation?
     private var settingsWindow: NSWindow?
+    private var settingsPopover: NSPopover?
     private var previewWindow: NSWindow?
     private var setupWindow: NSWindow?
     private let previewModel = CameraPreviewModel()
@@ -306,16 +307,43 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
 
     // MARK: Settings window
 
+    /// Settings drops down from the menu-bar icon, like other menu-bar apps: no window buttons,
+    /// and it closes when you click anywhere else. If the icon can't be seen (hidden behind the
+    /// notch or by a menu-bar manager), it opens as a regular window instead.
     @objc private func openSettings() {
+        // Wait for the menu to finish closing, or the panel would close with it.
+        DispatchQueue.main.async { [weak self] in self?.showSettingsPanel() }
+    }
+
+    private lazy var settingsView = SettingsView(showWelcome: { [weak self] in self?.showWelcome() },
+                                                 showSetup: { [weak self] in self?.openSetup() },
+                                                 setupNeeded: { AppDelegate.setupNeeded },
+                                                 showWhatsNew: { [weak self] in self?.showWhatsNew(since: nil) },
+                                                 updates: updates)
+
+    private func showSettingsPanel() {
+        if let button = statusItem.button, menuBarIconVisible {
+            settingsWindow?.close()
+            let popover = settingsPopover ?? {
+                let popover = NSPopover()
+                popover.behavior = .transient
+                popover.animates = true
+                popover.contentViewController = NSHostingController(rootView: settingsView)
+                settingsPopover = popover
+                return popover
+            }()
+            NSApp.activate(ignoringOtherApps: true)
+            if !popover.isShown {
+                popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+            }
+            popover.contentViewController?.view.window?.makeKey()
+            return
+        }
+        settingsPopover?.performClose(nil)
         if settingsWindow == nil {
-            let view = SettingsView(showWelcome: { [weak self] in self?.showWelcome() },
-                                    showSetup: { [weak self] in self?.openSetup() },
-                                    setupNeeded: { AppDelegate.setupNeeded },
-                                    showWhatsNew: { [weak self] in self?.showWhatsNew(since: nil) },
-                                    updates: updates)
-            let window = NSWindow(contentViewController: NSHostingController(rootView: view))
+            let window = NSWindow(contentViewController: NSHostingController(rootView: settingsView))
             window.title = "Over&Out Settings"
-            window.styleMask = [.titled, .closable, .miniaturizable]
+            window.styleMask = [.titled, .closable]
             window.isReleasedWhenClosed = false
             window.center()
             settingsWindow = window

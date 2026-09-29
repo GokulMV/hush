@@ -2,8 +2,60 @@ import Combine
 import ServiceManagement
 import SwiftUI
 
-enum SettingsTab: Hashable {
+enum SettingsTab: Hashable, CaseIterable {
     case general, presence, calls, permissions, updates, about
+
+    var title: String {
+        switch self {
+        case .general: return "General"
+        case .presence: return "Presence"
+        case .calls: return "Calls & Media"
+        case .permissions: return "Permissions"
+        case .updates: return "Updates"
+        case .about: return "About"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .general: return "gearshape"
+        case .presence: return "person.crop.circle"
+        case .calls: return "phone"
+        case .permissions: return "lock.shield"
+        case .updates: return "arrow.down.circle"
+        case .about: return "info.circle"
+        }
+    }
+}
+
+/// Icon-over-label tabs, like System Settings' toolbar; fits the drop-down panel better than
+/// a TabView, whose segmented tabs look out of place there.
+struct SettingsTabBar: View {
+    @Binding var selection: SettingsTab
+
+    var body: some View {
+        HStack(spacing: 2) {
+            ForEach(SettingsTab.allCases, id: \.self) { tab in
+                Button { selection = tab } label: {
+                    VStack(spacing: 3) {
+                        Image(systemName: tab.symbol).font(.system(size: 17))
+                            .frame(height: 20)
+                        Text(tab.title).font(.caption).lineLimit(1)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 6)
+                    .foregroundStyle(selection == tab ? Color.accentColor : Color.secondary)
+                    .background(RoundedRectangle(cornerRadius: 7)
+                        .fill(selection == tab ? Color.primary.opacity(0.08) : Color.clear))
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .help(tab.title)
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+    }
 }
 
 /// The Settings window. Every toggle writes straight to UserDefaults; the engine
@@ -40,25 +92,20 @@ struct SettingsView: View {
     private let refresh = Timer.publish(every: 2, on: .main, in: .common).autoconnect()
 
     var body: some View {
-        TabView(selection: $tab) {
-            generalTab
-                .tabItem { Label("General", systemImage: "gearshape") }
-                .tag(SettingsTab.general)
-            presenceTab
-                .tabItem { Label("Presence", systemImage: "person.crop.circle") }
-                .tag(SettingsTab.presence)
-            callsTab
-                .tabItem { Label("Calls & Media", systemImage: "phone") }
-                .tag(SettingsTab.calls)
-            permissionsTab
-                .tabItem { Label("Permissions", systemImage: "lock.shield") }
-                .tag(SettingsTab.permissions)
-            UpdatesView(model: updates)
-                .tabItem { Label("Updates", systemImage: "arrow.down.circle") }
-                .tag(SettingsTab.updates)
-            AboutView(showWhatsNew: showWhatsNew)
-                .tabItem { Label("About", systemImage: "info.circle") }
-                .tag(SettingsTab.about)
+        VStack(spacing: 0) {
+            SettingsTabBar(selection: $tab)
+            Divider()
+            Group {
+                switch tab {
+                case .general: generalTab
+                case .presence: presenceTab
+                case .calls: callsTab
+                case .permissions: permissionsTab
+                case .updates: UpdatesView(model: updates)
+                case .about: AboutView(showWhatsNew: showWhatsNew)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(width: 560, height: 620)
         .onAppear {
