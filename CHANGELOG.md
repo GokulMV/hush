@@ -7,7 +7,8 @@ notes, and Hush shows it in "What's New" after an upgrade and in Settings → Up
 - **One thing at a time after an update or first launch.** If something needs permission, only the
   Setup checklist opens (it asks for each permission when you press Allow); What's New or the welcome
   card follows once you close it, instead of windows and macOS prompts piling up together.
-- **Settings has a solid background**, so the window behind it no longer shows through the panel.
+- **Settings opens fully below the menu bar**, sized to fit your screen (it used to open above the
+  menu bar, cut off), and stays open until you click outside it or press Esc (it used to close by itself).
 
 ## 1.1.5
 - **The camera no longer stays on for a browser that isn't playing anything.** Browsers keep the

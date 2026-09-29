@@ -107,8 +107,9 @@ struct SettingsView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(width: 560, height: 620)
-        // The drop-down panel is see-through by default; over a bright window that made it hard to read.
+        // Fixed width; the height follows the panel, which fits it to the screen.
+        .frame(width: 560)
+        .frame(minHeight: 360, idealHeight: 620, maxHeight: .infinity)
         .background(Color(nsColor: .windowBackgroundColor))
         .onAppear {
             needsSetup = setupNeeded()

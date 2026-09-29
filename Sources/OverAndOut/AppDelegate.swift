@@ -10,7 +10,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     private var lastIcon = ""
     private var appearanceObservation: NSKeyValueObservation?
     private var settingsWindow: NSWindow?
-    private var settingsPopover: NSPopover?
+    private var settingsPanel: DropDownPanel?
     private var previewWindow: NSWindow?
     private var setupWindow: NSWindow?
     private let previewModel = CameraPreviewModel()
@@ -338,22 +338,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     private func showSettingsPanel() {
         if let button = statusItem.button, menuBarIconVisible {
             settingsWindow?.close()
-            let popover = settingsPopover ?? {
-                let popover = NSPopover()
-                popover.behavior = .transient
-                popover.animates = true
-                popover.contentViewController = NSHostingController(rootView: settingsView)
-                settingsPopover = popover
-                return popover
-            }()
-            NSApp.activate(ignoringOtherApps: true)
-            if !popover.isShown {
-                popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-            }
-            popover.contentViewController?.view.window?.makeKey()
+            let panel = settingsPanel ?? DropDownPanel(width: 560, preferredHeight: 640, content: settingsView)
+            settingsPanel = panel
+            if panel.isVisible { panel.makeKeyAndOrderFront(nil) } else { panel.show(below: button) }
             return
         }
-        settingsPopover?.performClose(nil)
+        settingsPanel?.close()
         if settingsWindow == nil {
             let window = NSWindow(contentViewController: NSHostingController(rootView: settingsView))
             window.title = "Over&Out Settings"
