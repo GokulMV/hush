@@ -159,7 +159,38 @@ final class MeetingControl: @unchecked Sendable {
                 return AXUIElementPerformAction(button, kAXPressAction as CFString) == .success
             }
         }
+        // An app you added, whose button you picked in Learn Buttons (after the built-in names,
+        // which stay first). The same button switches it off and back on.
+        if let bundleID = app.bundleIdentifier, let learned = CustomApps.app(for: bundleID)?.button(for: kind),
+           let button = findExactButton(pid: pid, label: learned) {
+            return AXUIElementPerformAction(button, kAXPressAction as CFString) == .success
+        }
         return false
+    }
+
+    /// Every button label the app shows right now, for Learn Buttons (Settings → Calls & Media).
+    func buttonLabels(in pid: pid_t, completion: @escaping @Sendable ([String]) -> Void) {
+        queue.async { [self] in
+            exposeWebContent(pid)
+            Thread.sleep(forTimeInterval: 0.6)
+            var labels: [String] = []
+            walk(pid: pid) { _, texts in
+                for text in texts where !labels.contains(text) { labels.append(text) }
+                return false
+            }
+            completion(labels)
+        }
+    }
+
+    private func findExactButton(pid: pid_t, label: String) -> AXUIElement? {
+        let wanted = label.lowercased()
+        var match: AXUIElement?
+        walk(pid: pid) { element, texts in
+            guard texts.contains(where: { $0.lowercased() == wanted }) else { return false }
+            match = element
+            return true
+        }
+        return match
     }
 
     /// Chrome listens to AXEnhancedUserInterface (what VoiceOver sets); Electron apps to
@@ -197,10 +228,10 @@ final class MeetingControl: @unchecked Sendable {
         switch (kind, on) {
         case (.video, false):
             return ["turn off camera", "turn camera off", "stop video", "stop my video", "stop camera",
-                    "disable camera", "hide video", "video off"]
+                    "disable camera", "hide video", "video off", "turn off video", "turn video off", "camera off"]
         case (.video, true):
             return ["turn on camera", "turn camera on", "start video", "start my video", "start camera",
-                    "enable camera", "show video", "video on"]
+                    "enable camera", "show video", "video on", "turn on video", "turn video on", "camera on"]
         case (.audio, false):
             return ["turn off microphone", "turn microphone off", "turn off mic", "mute microphone", "mute mic",
                     "mute audio", "mute myself", "mute"]

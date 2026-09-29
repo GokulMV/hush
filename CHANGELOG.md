@@ -4,6 +4,13 @@ Newest first. Each release needs a section here: `scripts/release.sh` uses it fo
 notes, and Hush shows it in "What's New" after an upgrade and in Settings → Updates.
 
 ## 1.1.12
+- **Add any call app yourself** (Settings → Calls & Media → Other call apps → Add App…). Its microphone
+  use then counts as a call, and Over&Out asks for the permission it needs (Accessibility) right away.
+  If the app's camera or mute isn't switched off when you step away, start a call in it and press
+  **Learn Buttons…**: pick its camera and mute buttons from the ones it shows, and Over&Out presses those.
+  The built-in names are still tried first, so apps that already worked are unchanged.
+- WhatsApp, Skype and FaceTime are treated as meeting apps when finding camera/mute buttons, and a few
+  more common button names are recognised (“Turn off video”, “Camera off”…).
 - **Pausing gets a safety net.** Everything that paused media before still does, the same way. On top
   of that, Over&Out now asks macOS what is playing (its “Now Playing”, as used by the media keys and
   Control Centre) and, if something is still playing that the usual steps didn't handle, sends it a real

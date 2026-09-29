@@ -15,6 +15,7 @@ enum AppClassifier {
         "us.zoom.xos", "com.microsoft.teams", "Cisco-Systems.Spark", "com.cisco.webex", "com.tinyspeck.slackmacgap",
         "com.hnc.Discord", "com.google.Chrome", "com.apple.Safari", "com.microsoft.edgemac", "company.thebrowser.Browser",
         "com.brave.Browser", "org.mozilla.firefox", "app.zen-browser.zen", "com.operasoftware.Opera", "com.vivaldi.Vivaldi",
+        "net.whatsapp.", "com.whatsapp", "com.skype.", "com.apple.FaceTime",
     ]
 
     /// Mic users that are not a conversation (Siri, dictation, accessibility).
@@ -38,12 +39,13 @@ enum AppClassifier {
     static let unknownMicUser = "unknown-mic-user"
     static let unknownOutput = "system-output"
 
+    /// Built-in hosts, plus the apps you added in Settings → Calls & Media.
     static func isMeetingHost(_ id: String) -> Bool {
-        meetingHostPrefixes.contains { id.hasPrefix($0) }
+        meetingHostPrefixes.contains { id.hasPrefix($0) } || CustomApps.contains(id)
     }
 
     static func isCallApp(_ id: String) -> Bool {
-        callAppPrefixes.contains { id.hasPrefix($0) }
+        callAppPrefixes.contains { id.hasPrefix($0) } || CustomApps.contains(id)
     }
 
     static func countsAsCall(micUser id: String, ownBundleID: String?) -> Bool {

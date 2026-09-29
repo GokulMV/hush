@@ -195,6 +195,8 @@ struct SettingsView: View {
                 .disabled(!ringProtect)
             }
 
+            CustomAppsSection()
+
             Section {
                 Toggle("Control meetings and videos inside browser tabs", isOn: $browserScripting)
             } header: {
