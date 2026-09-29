@@ -3,16 +3,18 @@
 Newest first. Each release needs a section here: `scripts/release.sh` uses it for the GitHub release
 notes, and Hush shows it in "What's New" after an upgrade and in Settings → Updates.
 
-## 1.1.4
-- **Accessibility no longer gets stuck after an update.** macOS kept showing the old version's switch as
-  on while ignoring it, so Over&Out kept saying “Allow Accessibility”. Updating now clears that stale
-  entry, and “Allow Accessibility…” (menu or Setup) clears it too before asking, so turning the switch
-  on works straight away. You get a notification the moment it takes effect.
+## 1.1.5
 - **The camera no longer stays on for a browser that isn't playing anything.** Browsers keep the
   speakers open for paused videos and some websites; Over&Out now checks the tab bar and ignores a
   quiet browser (and nameless background helpers). The menu's “Camera sees” line says why it's on.
 - **Settings drops down from the menu-bar icon**, like other menu-bar apps: no window buttons, and it
   closes when you click elsewhere. Cleaner icon tabs replace the old segmented tab bar.
+
+## 1.1.4
+- **Accessibility no longer gets stuck after an update.** macOS kept showing the old version's switch as
+  on while ignoring it, so Over&Out kept saying “Allow Accessibility”. Updating now clears that stale
+  entry, and “Allow Accessibility…” (menu or Setup) clears it too before asking, so turning the switch
+  on works straight away. You get a notification the moment it takes effect.
 
 ## 1.1.3
 - **Permissions now survive updates.** Releases are signed with the same certificate every time, so
