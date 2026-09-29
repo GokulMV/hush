@@ -2,31 +2,31 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleIdentifier</key>
-    <string>com.gokulmv.hush</string>
-    <key>CFBundleName</key>
-    <string>Hush</string>
-    <key>CFBundleDisplayName</key>
-    <string>Hush</string>
-    <key>CFBundleExecutable</key>
-    <string>Hush</string>
-    <key>CFBundleIconFile</key>
-    <string>AppIcon</string>
-    <key>HushGitHubRepo</key>
-    <string>GokulMV/hush</string>
-    <key>CFBundlePackageType</key>
-    <string>APPL</string>
-    <key>CFBundleShortVersionString</key>
-    <string>1.0.0</string>
-    <key>CFBundleVersion</key>
-    <string>1</string>
-    <key>LSMinimumSystemVersion</key>
-    <string>13.0</string>
-    <key>LSUIElement</key>
-    <true/>
-    <key>NSCameraUsageDescription</key>
-    <string>Hush looks at the camera on this Mac, on-device, to notice when you walk away or hold a phone to your ear. No frames are saved or sent anywhere.</string>
-    <key>NSAppleEventsUsageDescription</key>
-    <string>Hush pauses Spotify and Music when you step away or a call starts, and resumes them when you are back.</string>
+	<key>CFBundleDisplayName</key>
+	<string>Hush</string>
+	<key>CFBundleExecutable</key>
+	<string>Hush</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.gokulmv.hush</string>
+	<key>CFBundleName</key>
+	<string>Hush</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0.0</string>
+	<key>CFBundleVersion</key>
+	<string>202609290709</string>
+	<key>HushGitHubRepo</key>
+	<string>GokulMV/hush</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>13.0</string>
+	<key>LSUIElement</key>
+	<true/>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Hush pauses Spotify and Music when you step away or a call starts, and resumes them when you are back.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Hush looks at the camera on this Mac, on-device, to notice when you walk away or hold a phone to your ear. No frames are saved or sent anywhere.</string>
 </dict>
 </plist>
