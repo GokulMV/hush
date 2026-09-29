@@ -9,7 +9,8 @@ notes, and Hush shows it in "What's New" after an upgrade and in Settings → Up
   really happened, with what Homebrew said if it didn't.
 - **Checking for updates no longer gets stuck on “Checking…”**: it gives up after 15 seconds, and
   falls back to github.com when GitHub's API is busy.
-- Release notes wrap to the window instead of breaking mid-sentence.
+- Release notes wrap to the window instead of breaking mid-sentence, leave out the Homebrew install
+  line, and cover every version since yours when you've skipped a few updates.
 
 ## 1.1.7
 - **Settings is a regular window again, in the middle of the screen**, with close and minimise buttons

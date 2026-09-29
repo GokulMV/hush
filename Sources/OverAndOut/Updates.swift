@@ -137,17 +137,37 @@ final class UpdateModel: ObservableObject {
         return (data, http)
     }
 
-    /// GitHub's API: version and release notes. nil when it fails (offline, or its hourly limit).
+    /// GitHub's API: the newest release, with the notes of every release since the installed
+    /// version (so skipping a few updates still shows everything that changed). nil when it fails
+    /// (offline, or its hourly limit).
     private static func latestFromAPI() async -> LatestRelease? {
-        var request = URLRequest(url: URL(string: "https://api.github.com/repos/\(AppInfo.repo)/releases/latest")!)
+        var request = URLRequest(url: URL(string: "https://api.github.com/repos/\(AppInfo.repo)/releases?per_page=30")!)
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
-        guard let (data, response) = await fetch(request) else { return nil }
-        if response.statusCode == 404 { return LatestRelease(tag: nil, notes: "", page: releasesPage) }
-        guard response.statusCode == 200,
-              let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
-              let tag = json["tag_name"] as? String else { return nil }
-        let page = (json["html_url"] as? String).flatMap(URL.init(string:)) ?? releasesPage
-        return LatestRelease(tag: tag, notes: json["body"] as? String ?? "", page: page)
+        guard let (data, response) = await fetch(request), response.statusCode == 200,
+              let list = (try? JSONSerialization.jsonObject(with: data)) as? [[String: Any]] else { return nil }
+        let installed = AppVersion(AppInfo.version)
+        let releases = list
+            .filter { ($0["draft"] as? Bool) != true && ($0["prerelease"] as? Bool) != true }
+            .compactMap { json -> (version: AppVersion, notes: String, page: URL?)? in
+                guard let tag = json["tag_name"] as? String else { return nil }
+                return (AppVersion(tag), releaseNotes(json["body"] as? String ?? ""),
+                        (json["html_url"] as? String).flatMap(URL.init(string:)))
+            }
+            .sorted { $0.version > $1.version }
+        guard let newest = releases.first else { return LatestRelease(tag: nil, notes: "", page: releasesPage) }
+        let newer = releases.filter { $0.version > installed }
+        let notes = newer.count <= 1
+            ? newest.notes
+            : newer.map { "**\($0.version.description)**\n\($0.notes)" }.joined(separator: "\n\n")
+        return LatestRelease(tag: newest.version.description, notes: notes, page: newest.page ?? releasesPage)
+    }
+
+    /// A release's notes without the "Install with Homebrew" footer the release script adds for the
+    /// GitHub page (inside the app it's just noise).
+    nonisolated static func releaseNotes(_ body: String) -> String {
+        let text = body.replacingOccurrences(of: "\r\n", with: "\n")
+        let notes = text.range(of: "\n---\n").map { String(text[..<$0.lowerBound]) } ?? text
+        return notes.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     /// Fallback without the API's limit: github.com/…/releases/latest redirects to …/tag/v1.2.3.

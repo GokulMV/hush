@@ -185,6 +185,12 @@ final class LedgerDropTests: XCTestCase {
 }
 
 final class UpdateAndChangelogTests: XCTestCase {
+    func testReleaseNotesDropTheHomebrewFooter() {
+        let body = "- Fixed things\r\n\r\n---\r\nInstall or update with Homebrew: `brew install`"
+        XCTAssertEqual(UpdateModel.releaseNotes(body), "- Fixed things")
+        XCTAssertEqual(UpdateModel.releaseNotes("- Only notes"), "- Only notes")
+    }
+
     func testChangelogBulletsAreUnwrapped() {
         let text = "- **Bold** first line\n  continues here\n- second\n\nplain"
         XCTAssertEqual(Changelog.unwrap(text), "• **Bold** first line continues here\n• second\n\nplain")
