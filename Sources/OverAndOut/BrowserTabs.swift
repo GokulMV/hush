@@ -20,13 +20,20 @@ enum BrowserTabs {
     /// Is a tab other than a meeting playing sound? `.unknown` for non-Chromium browsers, without
     /// Accessibility, or when no tabs could be read (callers then fall back to other signals).
     /// Recent answers per browser process: the tab bar is asked at most every 1.5 s.
+    /// Asked from the main thread and from the background audio sampler, hence the lock.
     private static var cache: [pid_t: (at: Date, answer: Audibility)] = [:]
+    private static let cacheLock = NSLock()
 
     static func audibility(of app: NSRunningApplication) -> Audibility {
         let pid = app.processIdentifier
-        if let hit = cache[pid], Date().timeIntervalSince(hit.at) < 1.5 { return hit.answer }
+        cacheLock.lock()
+        let hit = cache[pid]
+        cacheLock.unlock()
+        if let hit, Date().timeIntervalSince(hit.at) < 1.5 { return hit.answer }
         let answer = readTabBar(of: app)
+        cacheLock.lock()
         cache[pid] = (Date(), answer)
+        cacheLock.unlock()
         return answer
     }
 

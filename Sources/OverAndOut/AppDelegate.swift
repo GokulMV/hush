@@ -266,10 +266,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     /// Live view of the latest frame, so you can test the detection.
     private var cameraLine: String? {
         guard settings.cameraActive, engine.isSensing, let reading = engine.lastReading else { return nil }
+        let why = engine.cameraReasonsText.isEmpty ? "" : " (on because \(engine.cameraReasonsText))"
         switch reading {
-        case .present: return "📷  Camera sees: you"
-        case .absent: return "📷  Camera sees: no one"
-        case .phoneToEar: return "📷  Camera sees: you on the phone"
+        case .present: return "📷  Camera sees: you" + why
+        case .absent: return "📷  Camera sees: no one" + why
+        case .phoneToEar: return "📷  Camera sees: you on the phone" + why
         }
     }
 

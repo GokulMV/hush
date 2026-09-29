@@ -81,6 +81,8 @@ final class OverAndOutEngine {
     /// round trip to coreaudiod, and when that daemon is busy a query on the main thread froze the
     /// whole app ("Not Responding"). The main thread only ever reads the latest finished sample.
     private var latestActivity: AudioActivity?
+    /// Output users whose browser tab bar shows nothing playing (see sampleActivity).
+    private var quietOutputs: Set<String> = []
     private var sampling = false
 
     private func sampleActivity() {
@@ -88,8 +90,16 @@ final class OverAndOutEngine {
         sampling = true
         Task.detached(priority: .userInitiated) { [weak self] in
             let activity = AudioDevices.activity()
+            // Browsers keep their sound output open for pages that aren't playing anything
+            // (a paused video, a site's audio engine). Their tab bar says whether a tab really plays,
+            // so a quiet browser doesn't keep the camera on. Read here, off the main thread.
+            let quiet = Set(activity.outputUsers.filter { id in
+                guard let app = OverAndOutEngine.runningApp(for: id) else { return false }
+                return BrowserTabs.audibility(of: app) == .nothingPlaying
+            })
             await MainActor.run {
                 self?.latestActivity = activity
+                self?.quietOutputs = quiet
                 self?.sampling = false
             }
         }
@@ -246,8 +256,11 @@ final class OverAndOutEngine {
         if callPhase == .inCall {
             reasons.append(.call(callApps.map(Self.displayName).sorted().first ?? "an app"))
         }
-        if let playing = outputSince.keys.first(where: {
-            AppClassifier.isMediaSource($0) || AppClassifier.scriptablePlayers.contains($0)
+        // Only real apps count: nameless helper processes ("pid:…") and browsers whose tabs are all
+        // quiet hold the speakers open without playing anything you'd watch.
+        if let playing = outputSince.keys.sorted().first(where: {
+            !$0.hasPrefix("pid:") && !quietOutputs.contains($0)
+                && (AppClassifier.isMediaSource($0) || AppClassifier.scriptablePlayers.contains($0))
         }) {
             reasons.append(.media(playing == AppClassifier.unknownOutput ? "Something" : Self.displayName(playing)))
         }
@@ -577,7 +590,7 @@ final class OverAndOutEngine {
     /// The app behind an audio process: "com.brave.Browser.helper" → Brave, WebKit → Safari.
     /// Helper processes are running applications too, but windowless and background-only
     /// (activation policy .prohibited), so keep going until we reach a regular app with windows.
-    static func runningApp(for bundleID: String) -> NSRunningApplication? {
+    nonisolated static func runningApp(for bundleID: String) -> NSRunningApplication? {
         if bundleID.hasPrefix("pid:"), let pid = pid_t(bundleID.dropFirst(4)) {
             return NSRunningApplication(processIdentifier: pid)
         }
