@@ -19,7 +19,18 @@ enum BrowserTabs {
 
     /// Is a tab other than a meeting playing sound? `.unknown` for non-Chromium browsers, without
     /// Accessibility, or when no tabs could be read (callers then fall back to other signals).
+    /// Recent answers per browser process: the tab bar is asked at most every 1.5 s.
+    private static var cache: [pid_t: (at: Date, answer: Audibility)] = [:]
+
     static func audibility(of app: NSRunningApplication) -> Audibility {
+        let pid = app.processIdentifier
+        if let hit = cache[pid], Date().timeIntervalSince(hit.at) < 1.5 { return hit.answer }
+        let answer = readTabBar(of: app)
+        cache[pid] = (Date(), answer)
+        return answer
+    }
+
+    private static func readTabBar(of app: NSRunningApplication) -> Audibility {
         // The tab labels ("Audio playing") are in the browser's UI language, which follows the Mac's.
         guard Locale.preferredLanguages.first?.hasPrefix("en") ?? false,
               let bundleID = app.bundleIdentifier,
@@ -38,8 +49,11 @@ enum BrowserTabs {
 
         var queue = queueStart
         var index = 0
+        // Runs on the main thread: never let a busy browser stall the app. Out of time = don't know.
+        let deadline = Date().addingTimeInterval(0.3)
         var sawTab = false
-        while index < queue.count && index < 5000 {
+        while index < queue.count && index < 3000 {
+            if Date() > deadline { return .unknown }
             let element = queue[index]
             index += 1
             var values: CFArray?

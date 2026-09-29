@@ -94,7 +94,7 @@ final class OverAndOutEngine {
         }
 
         // Keep the hard mute airtight: new mics, apps that auto-raise input volume.
-        if MicMuter.isMuted { unmutableMics = MicMuter.mute() }
+        MicMuter.enforceInBackground()
         MicMuter.restoreReconnected()
         onChange?()
     }

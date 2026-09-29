@@ -49,6 +49,14 @@ enum AudioDevices {
         objectList(system, kAudioHardwarePropertyDevices).filter { hasStreams($0, scope: kAudioObjectPropertyScopeInput) }
     }
 
+    /// Real microphones: skips virtual and aggregate devices (ZoomAudioDevice, Teams Audio,
+    /// BlackHole, Loopback, aggregate devices), which Over&Out must not mute or poll.
+    static var physicalInputDevices: [AudioDeviceID] {
+        let skipped: Set<UInt32> = [kAudioDeviceTransportTypeVirtual, kAudioDeviceTransportTypeAggregate,
+                                    kAudioDeviceTransportTypeAutoAggregate]
+        return inputDevices.filter { !skipped.contains(uint32($0, kAudioDevicePropertyTransportType) ?? 0) }
+    }
+
     static var defaultOutput: AudioDeviceID? {
         uint32(system, kAudioHardwarePropertyDefaultOutputDevice).flatMap { $0 == 0 ? nil : $0 }
     }
