@@ -108,6 +108,8 @@ struct SettingsView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(width: 560, height: 620)
+        // The drop-down panel is see-through by default; over a bright window that made it hard to read.
+        .background(Color(nsColor: .windowBackgroundColor))
         .onAppear {
             needsSetup = setupNeeded()
             if tab == .permissions { loadPermissions() }
