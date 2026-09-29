@@ -251,3 +251,21 @@ final class LearnedButtonTests: XCTestCase {
         XCTAssertFalse(LearnableButton(label: "Camera", value: nil).isSafe)
     }
 }
+
+final class CallDetectionTests: XCTestCase {
+    func testMacOSSpeechServicesAreNeverACall() {
+        XCTAssertFalse(AppClassifier.countsAsCall(micUser: "com.apple.CoreSpeech", ownBundleID: nil),
+                       "Siri / Hey Siri listening kept a call going for good")
+        XCTAssertFalse(AppClassifier.countsAsCall(micUser: "com.apple.corespeechd", ownBundleID: nil))
+        XCTAssertFalse(AppClassifier.countsAsCall(micUser: "com.apple.SpeechRecognitionCore.speechrecognitiond", ownBundleID: nil))
+        XCTAssertFalse(AppClassifier.countsAsCall(micUser: "com.apple.VoiceControl", ownBundleID: nil))
+    }
+
+    func testRealCallsStillCount() {
+        for app in ["com.apple.FaceTime", "com.apple.avconferenced", "net.whatsapp.WhatsApp", "us.zoom.xos",
+                    "com.google.Chrome.helper", "com.microsoft.teams2"] {
+            XCTAssertTrue(AppClassifier.countsAsCall(micUser: app, ownBundleID: nil), app)
+        }
+        XCTAssertFalse(AppClassifier.countsAsCall(micUser: "com.gokulmv.overandout", ownBundleID: "com.gokulmv.overandout"))
+    }
+}

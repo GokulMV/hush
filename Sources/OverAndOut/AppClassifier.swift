@@ -48,8 +48,16 @@ enum AppClassifier {
         callAppPrefixes.contains { id.hasPrefix($0) } || CustomApps.contains(id)
     }
 
+    /// macOS's own background services (Siri and "Hey Siri" listening, dictation, voice control…)
+    /// hold the mic without any call. They're ignored whatever their exact name or capitalisation
+    /// ("com.apple.CoreSpeech" once kept a "call" going for good); Apple's calling services
+    /// (FaceTime, iPhone calls) still count.
     static func countsAsCall(micUser id: String, ownBundleID: String?) -> Bool {
-        id != ownBundleID && !ignoredMicPrefixes.contains { id.hasPrefix($0) }
+        guard id != ownBundleID else { return false }
+        let lowered = id.lowercased()
+        if ignoredMicPrefixes.contains(where: { lowered.hasPrefix($0.lowercased()) }) { return false }
+        if lowered.hasPrefix("com.apple.") && !isCallApp(id) { return false }
+        return true
     }
 
     /// True when sound from `id` is something you'd want paused (a video, music), not a call or a system chime.

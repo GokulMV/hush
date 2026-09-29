@@ -37,6 +37,8 @@ final class OverAndOutEngine {
     private var outputSince: [String: Date] = [:]
     private var perProcessAudio = true
     private var lastMicSeen: Date?
+    /// The call apps of the current call, remembered while their mic is off (muted).
+    private(set) var recentCallApps: Set<String> = []
     private var callStartedAt: Date?
     private var sensingIdleSince: Date?
     private var cameraWasPaused = false
@@ -45,6 +47,8 @@ final class OverAndOutEngine {
 
     /// Mic must stay silent this long before a call counts as over (apps briefly reopen the mic).
     static let callEndGrace: TimeInterval = 4
+    /// How long a call with the mic off (muted) still counts, while its app plays the call's sound.
+    static let mutedCallLimit: TimeInterval = 30 * 60
     /// An unanswered ring stops mattering after this.
     static let ringTimeout: TimeInterval = 45
     /// Sound must have been playing this long before a call to count as "you were watching something".
@@ -139,7 +143,16 @@ final class OverAndOutEngine {
 
     private func updateCallPhase(_ now: Date) {
         let micBusy = !callApps.isEmpty
-        if micBusy { lastMicSeen = now }
+        if micBusy {
+            lastMicSeen = now
+            recentCallApps.formUnion(callApps)
+        } else if callPhase == .inCall, callAudioStillPlaying(), let last = lastMicSeen,
+                  now.timeIntervalSince(last) < Self.mutedCallLimit {
+            // Muted in the call: some apps (WhatsApp…) release the mic while you're muted. The call
+            // goes on as long as a call app is still playing the call's sound (up to 30 minutes
+            // after the mic was last in use).
+            return
+        }
 
         switch callPhase {
         case .idle:
@@ -172,7 +185,16 @@ final class OverAndOutEngine {
         }
     }
 
+    /// A call app of this call (not a browser, which may be playing something else) still has
+    /// its sound running: the call is still on, you're just muted.
+    private func callAudioStillPlaying() -> Bool {
+        recentCallApps.contains { app in
+            AppClassifier.isCallApp(app) && outputSince.keys.contains { $0 == app || $0.hasPrefix(app + ".") }
+        }
+    }
+
     private func callEnded() {
+        recentCallApps = []
         callPhase = .idle
         callStartedAt = nil
         lastMicSeen = nil
@@ -260,7 +282,8 @@ final class OverAndOutEngine {
         if previewHandler != nil { reasons.append(.preview) }
         if settings.bool(Settings.Key.alwaysWatch) { reasons.append(.keepWatching) }
         if callPhase == .inCall {
-            reasons.append(.call(callApps.map(Self.displayName).sorted().first ?? "an app"))
+            let apps = callApps.isEmpty ? recentCallApps : callApps
+            reasons.append(.call(apps.map(Self.displayName).sorted().first ?? "an app"))
         }
         // Only real apps count: nameless helper processes ("pid:…") and browsers whose tabs are all
         // quiet hold the speakers open without playing anything you'd watch.
@@ -382,6 +405,7 @@ final class OverAndOutEngine {
         presence = .present
         callPhase = .idle
         lastMicSeen = nil
+        recentCallApps = []
         for reason in [Reason.ring, .call, .away, .phone] { release(reason) }
     }
 

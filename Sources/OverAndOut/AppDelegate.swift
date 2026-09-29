@@ -47,6 +47,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         HotKeys.shared.register(keyCode: kVK_ANSI_H) { [weak self] in self?.showMenuAtPointer() }
 
         timer = Timer.scheduledTimer(timeInterval: 0.5, target: self, selector: #selector(tick), userInfo: nil, repeats: true)
+        // Keep running while the menu is open (menus track events in another run-loop mode), so
+        // detection doesn't pause and the menu isn't a stale snapshot.
+        if let timer { RunLoop.main.add(timer, forMode: .common) }
         tick()
         greet()
         updates.startAutomaticChecks()
@@ -259,6 +262,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         case .idle: return "📞  No call"
         case .ringing: return "📳  Phone ringing"
         case .inCall:
+            if engine.callApps.isEmpty {
+                let names = engine.recentCallApps.map(OverAndOutEngine.displayName).sorted().joined(separator: ", ")
+                return names.isEmpty ? "📞  Call ending…" : "📞  In a call (\(names), mic off)"
+            }
             let names = engine.callApps.map(OverAndOutEngine.displayName).sorted().joined(separator: ", ")
             return "📞  In a call (\(names))"
         }
