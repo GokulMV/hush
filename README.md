@@ -160,8 +160,8 @@ brew install gh && gh auth login     # once
 ```
 
 This builds Over&Out.app for Apple Silicon and Intel (with full Xcode, or with the Command Line Tools by
-building each chip separately and joining them) with the phone detectors bundled,
-uploads `OverAndOut-1.0.0.zip` as a GitHub release, and writes `Casks/over-and-out.rb` into the tap repo
+building each chip separately and joining them; the phone detectors aren't bundled, the app downloads them
+from Apple on first launch), uploads `OverAndOut-1.0.0.zip` as a GitHub release, and writes `Casks/over-and-out.rb` into the tap repo
 `GokulMV/homebrew-tap` (created on the first release). Over&Out isn't notarized yet, so the cask removes the
 download quarantine after installing; notarizing needs an Apple Developer account.
 
@@ -210,11 +210,12 @@ tccutil reset All com.gokulmv.callguard
 - **Meeting camera/mute needs a visible meeting tab.** Browsers only expose the active tab of each window, so
   keep the Meet tab in front within its window (the window itself can be behind others). An app with unlabeled
   buttons can't be controlled; the system-wide mic mute still silences you everywhere.
-- **Phone detection uses Apple's Core ML YOLOv3-Tiny object detector** (~9 MB). It's bundled when the build
-  can fetch it; otherwise Over&Out downloads it from Apple by itself in the background on first launch (and
-  retries later if offline). Nothing to do for the user. It counts a *phone* seen in your hand or at your ear;
-  a hand at your ear without a phone never counts. A phone hidden almost entirely by your hand may be missed;
-  Camera Preview shows the detected phones (red boxes) and their confidence.
+- **Phone detection uses Apple's Core ML YOLOv3 object detector** (the full model on Apple Silicon, the
+  ~9 MB Tiny one on Intel). It isn't bundled: Over&Out downloads it from Apple by itself in the background on
+  first launch (Tiny first, so detection starts within seconds, then the full model), and retries later if
+  offline. Nothing to do for the user. It counts a *phone* seen in your hand or at your ear; a hand at your
+  ear without a phone never counts. Camera Preview shows the detected phones (red boxes), their confidence
+  and which model is in use.
 - **Ringing detection** relies on macOS launching FaceTime when an iPhone call comes in (Continuity). If your
   iPhone isn't set up to ring on the Mac, only the phone-at-ear detection will catch the call.
 - On **macOS 13 – 14.1** Core Audio can't say *which* app is playing sound, so media pausing mid-call is skipped
@@ -240,3 +241,19 @@ python3 scripts/make-icon.py   # redraw Resources/AppIcon.icns (needs Pillow)
 | `Permissions.swift` | Live permission status |
 | `SettingsView.swift`, `Banner.swift`, `AppDelegate.swift` | Settings window, welcome card, menu-bar UI |
 | `AppDelegate.swift` | Menu-bar UI |
+
+## License
+
+Over&Out is free software: you can redistribute it and/or modify it under the terms of the
+**GNU General Public License** as published by the Free Software Foundation, either **version 3** of
+the License, or (at your option) any later version. In short: you may use, study, share and change
+it, and anyone who shares a modified version must share its source under the same license.
+
+It is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the
+implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See [LICENSE](LICENSE) for
+the full text.
+
+Copyright © 2026 Gokul MV. Work by others that Over&Out uses (such as the YOLOv3 phone detector,
+which the app downloads from Apple and doesn't include) is listed in
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+

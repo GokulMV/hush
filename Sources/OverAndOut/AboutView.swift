@@ -48,10 +48,26 @@ struct AboutView: View {
             }
 
             Section("Credits") {
-                Text("Phone detection uses Apple's Core ML \(PhoneDetector.shared.modelDescription) (from developer.apple.com/machine-learning/models). Presence detection uses Apple's Vision framework.")
+                Text("Phone detection uses Apple's Core ML \(PhoneDetector.shared.modelDescription) (from developer.apple.com/machine-learning/models), downloaded from Apple on first launch. It's a conversion of YOLOv3 by Joseph Redmon and Ali Farhadi (Darknet, public domain). Presence detection uses Apple's Vision framework.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+                Link(destination: repoURL.appendingPathComponent("blob/main/THIRD_PARTY_NOTICES.md")) {
+                    Label("Third-party notices", systemImage: "doc.text")
+                }
+            }
+
+            Section("License") {
+                Text("Over&Out is free software, licensed under the GNU General Public License version 3 or later. You may use, study, share and change it; anyone who shares a modified version must share its source under the same license. It comes with no warranty.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Link(destination: repoURL.appendingPathComponent("blob/main/LICENSE")) {
+                    Label("GNU GPL v3 (full text)", systemImage: "doc.plaintext")
+                }
+                Link(destination: repoURL) {
+                    Label("Source code", systemImage: "chevron.left.forwardslash.chevron.right")
+                }
                 Text(verbatim: "© \(String(Calendar.current.component(.year, from: Date()))) Gokul MV")
                     .font(.callout)
                     .foregroundStyle(.secondary)

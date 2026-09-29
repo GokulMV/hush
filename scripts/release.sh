@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Publishes an Over&Out release that installs with Homebrew:
-#   1. builds "Over&Out.app" (Apple Silicon + Intel when Xcode allows), with the phone detector bundled
+#   1. builds "Over&Out.app" for Apple Silicon and Intel (the phone detectors are downloaded from Apple by the app)
 #   2. uploads OverAndOut-<version>.zip as a GitHub release of this repo
 #   3. writes Casks/over-and-out.rb and pushes it to the tap repo <owner>/homebrew-tap (created if missing)
 # Afterwards anyone can install with:  brew install --cask <owner>/tap/over-and-out
@@ -41,8 +41,6 @@ echo "▶ Setting version $VERSION"
 
 echo "▶ Building"
 UNIVERSAL=1 ./scripts/build-app.sh
-[ -s "build/Over&Out.app/Contents/Resources/ObjectDetector.mlmodel" ] \
-    || echo "⚠️  Phone detector not bundled; the app will download it on first launch."
 
 # Without full Xcode the build is Apple Silicon only; say so in the cask so Intel Macs get a clear message.
 ARCH_LINE=""

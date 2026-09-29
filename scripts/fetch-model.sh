@@ -3,7 +3,8 @@
 # (developer.apple.com/machine-learning/models; COCO classes, including "cell phone"):
 #   Resources/ObjectDetector.mlmodel       YOLOv3-Tiny, ~9 MB (used on Intel Macs, and as a fallback)
 #   Resources/PhoneDetectorLarge.mlmodel   full YOLOv3, ~62 MB (used on Apple Silicon: far more accurate)
-# Each is fetched once. The app downloads any that are missing by itself, so a failure here is not fatal.
+# For local development only: builds don't bundle them (the app downloads them from Apple itself on
+# first launch, see THIRD_PARTY_NOTICES.md). The files are git-ignored and must never be committed.
 set -uo pipefail
 cd "$(dirname "$0")/.."
 

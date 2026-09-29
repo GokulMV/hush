@@ -3,6 +3,14 @@
 Newest first. Each release needs a section here: `scripts/release.sh` uses it for the GitHub release
 notes, and Hush shows it in "What's New" after an upgrade and in Settings → Updates.
 
+## 1.1.14
+- **Over&Out is now open source under the GNU GPL v3 (or later)**: free to use, study, share and change;
+  shared modified versions must stay open source too. See LICENSE and THIRD_PARTY_NOTICES.md (also inside
+  the app, and linked from About).
+- The phone detectors are no longer bundled: the app downloads them straight from Apple on first launch
+  (as it already did when a build didn't include them), so the download is about 2 MB instead of 63 MB.
+  Detection starts within seconds with the small model; the full model follows in the background.
+
 ## 1.1.13
 - **Fixed: a “call” that never ended.** macOS's own speech service (com.apple.CoreSpeech, used by Siri,
   “Hey Siri” and dictation) keeps the microphone open and was taken for a call, so the camera stayed on,
