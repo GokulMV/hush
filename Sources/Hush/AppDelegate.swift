@@ -36,6 +36,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         HotKeys.shared.register(keyCode: kVK_ANSI_P) { [weak self] in self?.engine.togglePanic() }
         HotKeys.shared.register(keyCode: kVK_ANSI_G) { [weak self] in self?.engine.toggleEnabled() }
         HotKeys.shared.register(keyCode: kVK_ANSI_C) { [weak self] in self?.engine.toggleCamera() }
+        HotKeys.shared.register(keyCode: kVK_ANSI_H) { [weak self] in self?.showMenuAtPointer() }
 
         timer = Timer.scheduledTimer(timeInterval: 0.5, target: self, selector: #selector(tick), userInfo: nil, repeats: true)
         tick()
@@ -52,12 +53,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     /// otherwise Settings.
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         // A menu-bar app has no main window: point at the icon instead of popping Settings open.
+        // If the icon is hidden (a full menu bar puts icons behind the notch), open Settings.
         if Self.setupNeeded {
             openSetup()
-        } else {
+        } else if menuBarIconVisible {
             banner.showAlreadyRunning(below: statusItem.button) { [weak self] in self?.openSettings() }
+        } else {
+            openSettings()
+            Notifier.post("Hush's menu-bar icon is hidden",
+                          "Your menu bar is full, so macOS hid it (often behind the notch). Press ⌃⌥⌘H any time to open Hush's menu.")
         }
         return false
+    }
+
+    /// False when macOS hides the status item: a full menu bar on a notched MacBook drops icons.
+    private var menuBarIconVisible: Bool {
+        guard let window = statusItem.button?.window, window.occlusionState.contains(.visible),
+              let screen = window.screen else { return false }
+        return screen.frame.intersects(window.frame)
+    }
+
+    /// ⌃⌥⌘H: Hush's menu at the mouse pointer, works even when the icon is hidden.
+    private func showMenuAtPointer() {
+        guard let menu = statusItem.menu else { return }
+        NSApp.activate(ignoringOtherApps: true) // a background app's pop-up menu wouldn't take clicks
+        menu.popUp(positioning: nil, at: NSEvent.mouseLocation, in: nil)
     }
 
     /// Setup isn't finished, or a permission Hush can't work without is missing (every reinstall

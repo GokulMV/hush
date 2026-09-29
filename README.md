@@ -19,6 +19,7 @@ for you. When you're back, it puts everything the way it was.
 
 | Shortcut | Does |
 |---|---|
+| `⌃⌥⌘H` | Open Hush's menu at the pointer (works even if a full menu bar hides the icon behind the notch) |
 | `⌃⌥⌘G` | Turn Hush on/off (off = nothing automatic; everything it took is given back) |
 | `⌃⌥⌘C` | Hush camera on/off (also ends a timed pause) |
 | `⌃⌥⌘M` | Mute/unmute every microphone (works even when Hush is off) |

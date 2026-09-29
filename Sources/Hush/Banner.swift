@@ -14,6 +14,7 @@ final class Banner {
                 title: "Hush is installed and running",
                 message: "Look for its icon in your menu bar, up here. Hush mutes your mic, turns your meeting camera off and pauses videos when you step away or put your phone to your ear, and turns everything back on when you return.",
                 shortcuts: [
+                    ("⌃⌥⌘H", "Open Hush's menu"),
                     ("⌃⌥⌘G", "Turn Hush on / off"),
                     ("⌃⌥⌘M", "Mute / unmute mic"),
                     ("⌃⌥⌘P", "Panic mode"),

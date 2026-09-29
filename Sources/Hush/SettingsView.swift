@@ -103,6 +103,7 @@ struct SettingsView: View {
             }
 
             Section("Keyboard shortcuts") {
+                shortcut("⌃⌥⌘H", "Open Hush's menu (even if its icon is hidden)")
                 shortcut("⌃⌥⌘G", "Turn Hush on / off")
                 shortcut("⌃⌥⌘C", "Hush camera on / off")
                 shortcut("⌃⌥⌘M", "Mute / unmute microphone")

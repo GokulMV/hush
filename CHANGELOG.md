@@ -10,7 +10,8 @@ notes, and Hush shows it in "What's New" after an upgrade and in Settings → Up
 - Homebrew: Apple-Silicon-only builds are marked as such, so Intel Macs get a clear message.
 - **Camera watchdog**: if the camera stops delivering video (e.g. while another app such as Zoom holds it),
   Hush restarts it instead of silently watching nothing, and the menu says so.
-- Opening Hush while it's already running points at its menu-bar icon instead of opening Settings.
+- **⌃⌥⌘H opens Hush's menu** at the mouse pointer, even when a full menu bar hides its icon behind the
+  notch. Opening Hush while it's running points at its icon, or opens Settings if the icon is hidden.
 
 ## 1.0.0 — first release
 - **Presence**: pauses videos, mutes your mic and turns off your meeting camera when you step away, and
