@@ -1,8 +1,8 @@
 # Written by scripts/release.sh and copied to the tap repo GokulMV/homebrew-hush.
 # Install with: brew install --cask gokulmv/hush/hush
 cask "hush" do
-  version "1.0.0"
-  sha256 "ccfb2e63b685a41f0726c3bdb5fe6ea92a0904195f5ecf41a8018c01777504ca"
+  version "1.0.1"
+  sha256 "88520a86a23a86b756f541eeeec620af9fa26988669a194a34eb48029ab982bb"
 
   url "https://github.com/GokulMV/hush/releases/download/v#{version}/Hush-#{version}.zip"
   name "Hush"
@@ -10,6 +10,7 @@ cask "hush" do
   homepage "https://github.com/GokulMV/hush"
 
   depends_on macos: ">= :ventura"
+  depends_on arch: :arm64
 
   app "Hush.app"
 
