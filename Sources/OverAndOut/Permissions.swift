@@ -74,6 +74,46 @@ enum Permissions {
         _ = AXIsProcessTrustedWithOptions(options)
     }
 
+    /// Asks for Accessibility in a way that survives updates. macOS ties the ✓ to the exact app
+    /// signature, so after an update the old Over&Out row can still look switched on while macOS
+    /// ignores it — and toggling it does nothing. Clearing our own row first (only ours, by bundle ID)
+    /// makes macOS add a fresh one for this version. Then it watches for the grant and says so.
+    static func requestAccessibility(clearStaleEntry: Bool = true, openSettings: Bool = true) {
+        guard !accessibilityGranted else { return }
+        DispatchQueue.global(qos: .userInitiated).async {
+            if clearStaleEntry, let bundleID = Bundle.main.bundleIdentifier {
+                let reset = Process()
+                reset.executableURL = URL(fileURLWithPath: "/usr/bin/tccutil")
+                reset.arguments = ["reset", "Accessibility", bundleID]
+                reset.standardOutput = FileHandle.nullDevice
+                reset.standardError = FileHandle.nullDevice
+                try? reset.run()
+                reset.waitUntilExit()
+            }
+            DispatchQueue.main.async {
+                promptForAccessibility()
+                if openSettings { openPrivacySettings("Privacy_Accessibility") }
+                watchForAccessibility()
+            }
+        }
+    }
+
+    private static var accessibilityWatch: Timer?
+
+    /// Polls for up to 5 minutes after asking, and confirms as soon as the switch takes effect.
+    private static func watchForAccessibility() {
+        accessibilityWatch?.invalidate()
+        let started = Date()
+        accessibilityWatch = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { timer in
+            if AXIsProcessTrusted() {
+                timer.invalidate()
+                Notifier.post("Accessibility is on", "Over&Out can now press camera/mute in meetings and pause media.")
+            } else if Date().timeIntervalSince(started) > 5 * 60 {
+                timer.invalidate()
+            }
+        }
+    }
+
     static func openPrivacySettings(_ pane: String) {
         open(privacy(pane))
     }

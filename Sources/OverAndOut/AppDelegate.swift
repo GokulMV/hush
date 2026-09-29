@@ -30,7 +30,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         watchAppearance()
 
         Notifier.requestPermission()
-        if !Permissions.accessibilityGranted { Permissions.promptForAccessibility() }
+        if !Permissions.accessibilityGranted {
+            // After an update the old ✓ belongs to the previous build; clear it so macOS asks afresh.
+            let updated = UserDefaults.standard.string(forKey: SettingsKey.lastRunVersion)
+                .map { $0 != AppInfo.version } ?? false
+            Permissions.requestAccessibility(clearStaleEntry: updated, openSettings: false)
+        }
 
         HotKeys.shared.register(keyCode: kVK_ANSI_M) { [weak self] in self?.engine.toggleMic() }
         HotKeys.shared.register(keyCode: kVK_ANSI_P) { [weak self] in self?.engine.togglePanic() }
@@ -212,7 +217,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
 
         menu.addItem(.separator())
         if !Permissions.accessibilityGranted {
-            menu.addItem(item("⚠️ Allow Accessibility (for meeting camera/mute & media keys)…", #selector(openAccessibility), modifiers: []))
+            menu.addItem(item("⚠️ Allow Accessibility (for meeting camera/mute & media keys) — shows as on? click to fix…", #selector(openAccessibility), modifiers: []))
         }
         let cameraStatus = PresenceSensor.authorization
         if settings.cameraActive, cameraStatus == .denied || cameraStatus == .restricted {
@@ -447,7 +452,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
                     }
                     NSApp.activate(ignoringOtherApps: true)
                     if alert.runModal() == .alertSecondButtonReturn {
-                        Permissions.openPrivacySettings("Privacy_Accessibility")
+                        Permissions.requestAccessibility()
                     }
                 }
             }
@@ -455,8 +460,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     }
 
     @objc private func openAccessibility() {
-        Permissions.promptForAccessibility()
-        Permissions.openPrivacySettings("Privacy_Accessibility")
+        Permissions.requestAccessibility()
     }
 
     @objc private func openCamera() {

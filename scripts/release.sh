@@ -77,6 +77,10 @@ $ARCH_LINE
 
   # Over&Out isn't notarized yet; without this macOS refuses to open a downloaded copy.
   postflight do
+    # The old version's Accessibility ✓ stays visible but no longer applies to the new build;
+    # clear it so macOS asks afresh instead of showing a switch that does nothing.
+    system_command "/usr/bin/tccutil", args: ["reset", "Accessibility", "com.gokulmv.overandout"],
+                   must_succeed: false
     system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{appdir}/Over&Out.app"]
   end
 

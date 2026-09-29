@@ -3,6 +3,12 @@
 Newest first. Each release needs a section here: `scripts/release.sh` uses it for the GitHub release
 notes, and Hush shows it in "What's New" after an upgrade and in Settings → Updates.
 
+## 1.1.4
+- **Accessibility no longer gets stuck after an update.** macOS kept showing the old version's switch as
+  on while ignoring it, so Over&Out kept saying “Allow Accessibility”. Updating now clears that stale
+  entry, and “Allow Accessibility…” (menu or Setup) clears it too before asking, so turning the switch
+  on works straight away. You get a notification the moment it takes effect.
+
 ## 1.1.3
 - **Permissions now survive updates.** Releases are signed with the same certificate every time, so
   macOS recognises each update as the same app and keeps Camera and Accessibility. (This update asks

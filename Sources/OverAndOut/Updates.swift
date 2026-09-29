@@ -143,7 +143,7 @@ final class UpdateModel: ObservableObject {
         let log = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent("Library/Logs/OverAndOut-update.log").path
         // Detached, so it survives Homebrew quitting Over&Out; reopens Over&Out when done.
-        let command = "nohup /bin/sh -c '\"\(brew)\" upgrade --cask gokulmv/tap/over-and-out; open -b com.gokulmv.overandout' > \"\(log)\" 2>&1 &"
+        let command = "nohup /bin/sh -c '\"\(brew)\" upgrade --cask gokulmv/tap/over-and-out; /usr/bin/tccutil reset Accessibility com.gokulmv.overandout; open -b com.gokulmv.overandout' > \"\(log)\" 2>&1 &"
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/bin/sh")
         process.arguments = ["-c", command]

@@ -45,8 +45,7 @@ final class SetupModel: ObservableObject {
     }
 
     func allowAccessibility() {
-        Permissions.promptForAccessibility()
-        Permissions.openPrivacySettings("Privacy_Accessibility")
+        Permissions.requestAccessibility()
     }
 
     func allowNotifications() {
