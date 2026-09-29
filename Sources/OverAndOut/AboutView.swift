@@ -52,7 +52,7 @@ struct AboutView: View {
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
-                Text("© \(Calendar.current.component(.year, from: Date())) Gokul MV")
+                Text(verbatim: "© \(String(Calendar.current.component(.year, from: Date()))) Gokul MV")
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
