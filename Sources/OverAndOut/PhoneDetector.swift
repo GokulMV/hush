@@ -55,6 +55,24 @@ final class PhoneDetector: @unchecked Sendable {
     private var downloading = false
     private var lastDownloadFailure: Date?
 
+    /// The detector in use right now, in words, for About and Camera Preview.
+    var modelDescription: String {
+        lock.lock()
+        let loaded = loadedVariant
+        let fetching = downloading
+        lock.unlock()
+        switch loaded {
+        case Self.large?:
+            return "full YOLOv3 model"
+        case Self.tiny?:
+            return Self.preferred == Self.large
+                ? "YOLOv3-Tiny model" + (fetching ? " (the full YOLOv3 model is downloading)" : " (the full YOLOv3 model will be downloaded)")
+                : "YOLOv3-Tiny model (Intel Macs use the smaller model)"
+        default:
+            return fetching ? "detector (downloading)" : "detector (not loaded yet)"
+        }
+    }
+
     /// For Camera Preview and Settings.
     var status: Status {
         lock.lock()

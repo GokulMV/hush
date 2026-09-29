@@ -48,7 +48,7 @@ struct AboutView: View {
             }
 
             Section("Credits") {
-                Text("Phone detection uses Apple's Core ML YOLOv3-Tiny model (from developer.apple.com/machine-learning/models). Presence detection uses Apple's Vision framework.")
+                Text("Phone detection uses Apple's Core ML \(PhoneDetector.shared.modelDescription) (from developer.apple.com/machine-learning/models). Presence detection uses Apple's Vision framework.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)

@@ -44,11 +44,11 @@ struct CameraPreviewView: View {
             }
             switch PhoneDetector.shared.status {
             case .ready:
-                Text("Hold your phone, at your ear or in your hand. It has to stay detected for 1 second to count. A hand at your ear without a phone doesn't count.")
+                Text("Hold your phone, at your ear or in your hand. It has to stay detected for 1 second to count. A hand at your ear without a phone doesn't count. Using the \(PhoneDetector.shared.modelDescription).")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             case .downloading, .notStarted:
-                Text("Getting the phone detector ready (a one-time ~9 MB download from Apple)… phone detection starts by itself when it's done.")
+                Text("Getting the phone detector ready (a one-time download from Apple)… phone detection starts by itself when it's done.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             case .unavailable:
