@@ -93,7 +93,8 @@ final class UpdateModel: ObservableObject {
     }
 
     private func runCheck(userInitiated: Bool) async {
-        let found = await Self.latestFromAPI() ?? Self.latestFromRedirect()
+        var found = await Self.latestFromAPI()
+        if found == nil { found = await Self.latestFromRedirect() }
         lastChecked = Date()
         defaults.set(lastChecked, forKey: Self.lastCheckKey)
         guard let found else {
