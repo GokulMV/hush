@@ -3,6 +3,11 @@
 Newest first. Each release needs a section here: `scripts/release.sh` uses it for the GitHub release
 notes, and Hush shows it in "What's New" after an upgrade and in Settings → Updates.
 
+## 1.1.12
+- **Automation rows show ✅ when the permission is on**, even when macOS doesn't answer Over&Out's
+  question about it (as happened with Spotify): Over&Out then asks the open app itself for its version,
+  which only works when the permission is on. Apps that aren't open still say so.
+
 ## 1.1.11
 - **Automation rows in Settings → Permissions no longer stay on “checking…”.** macOS sometimes never
   answers for an app; each app is now checked separately with a 3-second limit, and when macOS stays

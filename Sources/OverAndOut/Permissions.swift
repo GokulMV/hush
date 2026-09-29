@@ -7,7 +7,7 @@ import UserNotifications
 
 /// Live status of every permission Over&Out uses, for the Permissions menu.
 enum Permissions {
-    enum Status {
+    enum Status: Equatable {
         case granted, denied, notAsked
         case unknown(String)
 
@@ -111,7 +111,30 @@ enum Permissions {
             }
         }
         _ = group.wait(timeout: .now() + 3)
-        lock.lock(); let answered = answers; lock.unlock()
+        lock.lock(); var answered = answers; lock.unlock()
+
+        // No answer, but the app is open: ask the app itself something harmless ("get version").
+        // It replies only if the permission is on; macOS refuses with -1743 if it's off. Never for
+        // an app that isn't running (a command would launch it).
+        let unanswered = apps.filter { app in
+            answered[app.bundleID] == nil
+                && !NSRunningApplication.runningApplications(withBundleIdentifier: app.bundleID).isEmpty
+        }
+        if !unanswered.isEmpty {
+            let probes = DispatchGroup()
+            for app in unanswered {
+                probes.enter()
+                DispatchQueue.global(qos: .utility).async {
+                    if let status = probeAutomation(app.bundleID) {
+                        lock.lock(); answers[app.bundleID] = status; lock.unlock()
+                        recordAutomation(app.bundleID, allowed: status == .granted)
+                    }
+                    probes.leave()
+                }
+            }
+            _ = probes.wait(timeout: .now() + 4)
+            lock.lock(); answered = answers; lock.unlock()
+        }
         observedLock.lock(); let previous = lastAnswer; observedLock.unlock()
         return apps.map { app in
             var status = answered[app.bundleID] ?? previous[app.bundleID] ?? .unknown("no answer from macOS")
@@ -119,6 +142,27 @@ enum Permissions {
             if case .unknown = status, let seen = observed(app.bundleID) { status = seen }
             return automationRow(app, status)
         }
+    }
+
+    /// Sends the app a harmless command through osascript (killed after 3 s). nil: no clear answer.
+    private static func probeAutomation(_ bundleID: String) -> Status? {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+        process.arguments = ["-e", "tell application id \"\(bundleID)\" to get version"]
+        let output = Pipe()
+        process.standardOutput = output
+        process.standardError = output
+        do { try process.run() } catch { return nil }
+        let deadline = Date().addingTimeInterval(3)
+        while process.isRunning && Date() < deadline { Thread.sleep(forTimeInterval: 0.05) }
+        if process.isRunning {
+            process.terminate()
+            return nil
+        }
+        let text = String(data: output.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
+        if process.terminationStatus == 0 { return .granted }
+        if text.contains("-1743") || text.lowercased().contains("not authorized") { return .denied }
+        return nil
     }
 
     // What really happened the last time Over&Out controlled an app (a script ran, or macOS refused).
