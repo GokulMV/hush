@@ -83,9 +83,47 @@ enum Permissions {
         automatedApps.map { automationRow($0, .unknown("checking…")) }
     }
 
-    /// Slow (asks macOS about each app, which can take a while when an app is busy): call off the main thread.
+    /// Asks macOS about every app at once, each on its own thread, and waits at most 3 s in total:
+    /// macOS sometimes never answers for an app (the page used to sit on "checking…" for good).
+    /// Apps it doesn't answer for fall back to what Over&Out saw the last time it controlled them.
+    /// Call off the main thread.
     static func automationRows() -> [Row] {
-        automatedApps.map { automationRow($0, automationStatus($0.bundleID)) }
+        let apps = automatedApps
+        let lock = NSLock()
+        var answers: [String: Status] = [:]
+        let group = DispatchGroup()
+        for app in apps {
+            group.enter()
+            Thread.detachNewThread {
+                let status = automationStatus(app.bundleID)
+                lock.lock(); answers[app.bundleID] = status; lock.unlock()
+                group.leave()
+            }
+        }
+        _ = group.wait(timeout: .now() + 3)
+        lock.lock(); let answered = answers; lock.unlock()
+        return apps.map { app in
+            var status = answered[app.bundleID] ?? .unknown("no answer from macOS")
+            // "Unknown"/"open the app to check": what actually happened last time is more useful.
+            if case .unknown = status, let seen = observed(app.bundleID) { status = seen }
+            return automationRow(app, status)
+        }
+    }
+
+    // What really happened the last time Over&Out controlled an app (a script ran, or macOS refused).
+    private static let observedLock = NSLock()
+    private static var observedStatus: [String: Status] = [:]
+
+    /// Called by the media and browser controllers after talking to an app.
+    static func recordAutomation(_ bundleID: String, allowed: Bool) {
+        observedLock.lock()
+        observedStatus[bundleID] = allowed ? .granted : .denied
+        observedLock.unlock()
+    }
+
+    private static func observed(_ bundleID: String) -> Status? {
+        observedLock.lock(); defer { observedLock.unlock() }
+        return observedStatus[bundleID]
     }
 
     static func promptForAccessibility() {

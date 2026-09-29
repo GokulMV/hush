@@ -278,9 +278,15 @@ enum BrowserMedia {
         guard let output = osascript(script) else { return .failed }
         if output.hasPrefix("ERR:") {
             let message = output.lowercased()
-            if message.contains("not authorized") || message.contains("-1743") { return .notAuthorized }
-            return message.contains("javascript") ? .blocked : .failed
+            if message.contains("not authorized") || message.contains("-1743") {
+                Permissions.recordAutomation(bundleID, allowed: false)
+                return .notAuthorized
+            }
+            guard message.contains("javascript") else { return .failed }
+            Permissions.recordAutomation(bundleID, allowed: true) // it answered: only its JavaScript setting is off
+            return .blocked
         }
+        Permissions.recordAutomation(bundleID, allowed: true)
         return .count(Int(output) ?? 0)
     }
 

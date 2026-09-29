@@ -3,6 +3,11 @@
 Newest first. Each release needs a section here: `scripts/release.sh` uses it for the GitHub release
 notes, and Hush shows it in "What's New" after an upgrade and in Settings → Updates.
 
+## 1.1.11
+- **Automation rows in Settings → Permissions no longer stay on “checking…”.** macOS sometimes never
+  answers for an app; each app is now checked separately with a 3-second limit, and when macOS stays
+  quiet the row shows what happened the last time Over&Out controlled that app.
+
 ## 1.1.10
 - **Settings → Permissions lists everything again.** It showed nothing while macOS was slow to answer
   about one app; now the list appears at once and the per-app rows fill in when ready.

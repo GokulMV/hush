@@ -105,7 +105,13 @@ final class MediaController: @unchecked Sendable {
     private func run(_ bundleID: String, _ body: String) -> String? {
         var error: NSDictionary?
         let source = "tell application id \"\(bundleID)\"\n\(body)\nend tell"
-        return NSAppleScript(source: source)?.executeAndReturnError(&error).stringValue
+        let result = NSAppleScript(source: source)?.executeAndReturnError(&error)
+        if let number = error?[NSAppleScript.errorNumber] as? Int, number == -1743 {
+            Permissions.recordAutomation(bundleID, allowed: false)
+        } else if result != nil {
+            Permissions.recordAutomation(bundleID, allowed: true)
+        }
+        return result?.stringValue
     }
 }
 
