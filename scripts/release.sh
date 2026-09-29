@@ -102,8 +102,9 @@ git push -f origin "v$VERSION"
 if gh release view "v$VERSION" >/dev/null 2>&1; then
     gh release upload "v$VERSION" "$ZIP" --clobber
 else
-    printf '%s\n\n---\nInstall with Homebrew: `brew install --cask %s/tap/%s`\n' \
-        "$NOTES" "$OWNER_LC" "$CASK" > build/release-notes.md
+    if [ -n "$ARCH_LINE" ]; then CHIPS="Apple Silicon Macs only"; else CHIPS="Apple Silicon and Intel Macs"; fi
+    printf '%s\n\n---\nInstall with Homebrew (%s, macOS 13+): `brew install --cask %s/tap/%s`\nUpdate: `brew update && brew upgrade --cask %s/tap/%s`\n' \
+        "$NOTES" "$CHIPS" "$OWNER_LC" "$CASK" "$OWNER_LC" "$CASK" > build/release-notes.md
     gh release create "v$VERSION" "$ZIP" --title "Over&Out $VERSION" --notes-file build/release-notes.md
 fi
 

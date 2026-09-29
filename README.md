@@ -114,12 +114,42 @@ the *Camera sees:* line shows what the latest frame was read as (you / no one / 
 
 ## Install with Homebrew
 
+Over&Out needs macOS 13 (Ventura) or later. From version 1.1.13 one app runs natively on both
+Apple Silicon and Intel Macs, so the command is the same; only where Homebrew lives differs.
+Not sure which chip you have?  → Apple menu → **About This Mac** → "Chip" (Apple M1/M2/M3/M4…) or
+"Processor" (Intel), or run `uname -m` (`arm64` = Apple Silicon, `x86_64` = Intel).
+
+### Apple Silicon (M1, M2, M3, M4…)
+
 ```bash
+# Homebrew, if you don't have it yet (installs to /opt/homebrew):
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+eval "$(/opt/homebrew/bin/brew shellenv)"
+
 brew install --cask gokulmv/tap/over-and-out
 ```
 
-Update with `brew upgrade --cask gokulmv/tap/over-and-out`; remove with `brew uninstall --cask gokulmv/tap/over-and-out` (add `--zap` to also remove
-its settings). The first launch opens the Setup Assistant.
+### Intel
+
+```bash
+# Homebrew, if you don't have it yet (installs to /usr/local):
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+brew install --cask gokulmv/tap/over-and-out
+```
+
+Intel Macs need version 1.1.13 or later (earlier releases were Apple Silicon only). Phone detection uses
+the smaller detector on Intel, which keeps up without a Neural Engine; everything else is the same.
+
+### Update, remove, fix
+
+```bash
+brew update && brew upgrade --cask gokulmv/tap/over-and-out    # update (or: menu → Check for Updates)
+brew uninstall --cask gokulmv/tap/over-and-out                  # remove (add --zap to delete its settings too)
+brew install --cask --force gokulmv/tap/over-and-out            # "there is already an App at …": reinstall over it
+```
+
+The first launch opens the Setup Assistant, which asks for the permissions Over&Out needs.
 
 ### Publishing a release (maintainers)
 
@@ -129,7 +159,8 @@ brew install gh && gh auth login     # once
 ./scripts/release.sh 1.0.0
 ```
 
-This builds Over&Out.app (Apple Silicon + Intel when full Xcode is installed) with the phone detector bundled,
+This builds Over&Out.app for Apple Silicon and Intel (with full Xcode, or with the Command Line Tools by
+building each chip separately and joining them) with the phone detectors bundled,
 uploads `OverAndOut-1.0.0.zip` as a GitHub release, and writes `Casks/over-and-out.rb` into the tap repo
 `GokulMV/homebrew-tap` (created on the first release). Over&Out isn't notarized yet, so the cask removes the
 download quarantine after installing; notarizing needs an Apple Developer account.
