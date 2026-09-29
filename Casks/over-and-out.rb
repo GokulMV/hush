@@ -1,26 +1,26 @@
 # Written by scripts/release.sh and copied to the tap repo GokulMV/homebrew-tap.
 # Install with: brew install --cask gokulmv/tap/over-and-out
 cask "over-and-out" do
-  version "1.1.8"
-  sha256 "89526dd9667ce17048460e7fda34d973ade61a76766f51155b140dfd2dff26ad"
+  version "1.1.9"
+  sha256 "f0f077c990723ad57dc44b97b261b3725aef8a97a80709552a1bf92562f65198"
 
   url "https://github.com/GokulMV/hush/releases/download/v#{version}/OverAndOut-#{version}.zip"
   name "Over&Out"
   desc "Mutes your mic, turns off your camera and pauses videos when you step away or pick up your phone"
   homepage "https://github.com/GokulMV/hush"
 
-  depends_on macos: ">= :ventura"
+  depends_on macos: :ventura
   depends_on arch: :arm64
 
   app "Over&Out.app"
 
-  # Over&Out isn't notarized yet; without this macOS refuses to open a downloaded copy.
-  postflight do
+  # Declarative steps (Homebrew 7+; the old `postflight do` block is deprecated).
+  postflight_steps do
+    # Over&Out isn't notarized yet; without this macOS refuses to open a downloaded copy.
+    run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "{{appdir}}/Over&Out.app"], must_succeed: false
     # The old version's Accessibility ✓ stays visible but no longer applies to the new build;
-    # clear it so macOS asks afresh instead of showing a switch that does nothing.
-    system_command "/usr/bin/tccutil", args: ["reset", "Accessibility", "com.gokulmv.overandout"],
-                   must_succeed: false
-    system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{appdir}/Over&Out.app"]
+    # clear it so macOS asks afresh. (Over&Out also does this itself on its first launch after an update.)
+    run "/usr/bin/tccutil", args: ["reset", "Accessibility", "com.gokulmv.overandout"], must_succeed: false
   end
 
   uninstall quit: "com.gokulmv.overandout"
