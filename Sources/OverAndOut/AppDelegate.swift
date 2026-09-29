@@ -399,6 +399,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     /// instead of staying behind on the one where they were opened.
     private func present(_ window: NSWindow?) {
         guard let window else { return }
+        settingsPanel?.close() // it floats above windows: get it out of the way of the one opening
         if window.isVisible && !window.isOnActiveSpace {
             window.orderOut(nil) // re-show here rather than switching you back to its desktop
         }
