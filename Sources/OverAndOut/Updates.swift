@@ -35,8 +35,13 @@ enum AppInfo {
         Bundle.main.object(forInfoDictionaryKey: "GitHubRepo") as? String ?? "GokulMV/hush"
     }
 
+    /// Installed with Homebrew, or at least our tap is set up (Homebrew sometimes loses track of an
+    /// app it installed; the updater then reinstalls over it).
     static var installedWithHomebrew: Bool {
-        ["/opt/homebrew/Caskroom/over-and-out", "/usr/local/Caskroom/over-and-out"].contains { FileManager.default.fileExists(atPath: $0) }
+        ["/opt/homebrew", "/usr/local"].contains { prefix in
+            FileManager.default.fileExists(atPath: prefix + "/Caskroom/over-and-out")
+                || FileManager.default.fileExists(atPath: prefix + "/Library/Taps/gokulmv/homebrew-tap")
+        }
     }
 
     static var brew: String? {
@@ -204,7 +209,10 @@ final class UpdateModel: ObservableObject {
         export HOMEBREW_NO_INSTALL_CLEANUP=1
         echo "Over&Out update to \(version), $(date)"
         "\(brew)" update --quiet
-        "\(brew)" upgrade --cask gokulmv/tap/over-and-out
+        # If Homebrew lost track of the app (it then refuses: "there is already an App at …"),
+        # reinstall over it; settings and permissions are kept.
+        "\(brew)" upgrade --cask gokulmv/tap/over-and-out \\
+            || "\(brew)" install --cask --force gokulmv/tap/over-and-out
         echo "brew finished with status $?"
         open -b com.gokulmv.overandout
         """
