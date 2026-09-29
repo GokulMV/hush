@@ -42,7 +42,11 @@ enum Permissions {
     /// Updated asynchronously (the API has no synchronous form); refreshed each time the menu opens.
     private static var notificationStatus: Status = .unknown("checking…")
 
-    static func rows() -> [Row] {
+    static func rows() -> [Row] { rows(automation: automationRows()) }
+
+    /// Everything, with the Automation rows (slow: each one asks macOS about another app) passed in,
+    /// so the quick rows can be shown right away while those are still being checked.
+    static func rows(automation: [Row]) -> [Row] {
         refreshNotificationStatus()
         var rows = [
             Row(name: "Camera", purpose: "see if you're at your desk or on the phone",
@@ -50,16 +54,7 @@ enum Permissions {
             Row(name: "Accessibility", purpose: "press camera/mute in Meet, Zoom, Teams… and the ⏯ key",
                 status: accessibilityGranted ? .granted : .denied, settingsURL: privacy("Privacy_Accessibility")),
         ]
-        var automated = [("com.spotify.client", "Spotify"), ("com.apple.Music", "Music")]
-        if BrowserMedia.enabled { // browsers are only contacted when the advanced option is on
-            automated += [("com.google.Chrome", "Chrome"), ("com.apple.Safari", "Safari"),
-                          ("com.microsoft.edgemac", "Edge"), ("com.brave.Browser", "Brave"), ("com.vivaldi.Vivaldi", "Vivaldi")]
-        }
-        for (bundleID, name) in automated
-        where NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) != nil {
-            rows.append(Row(name: "Automation → \(name)", purpose: "pause and resume media in \(name)",
-                            status: automationStatus(bundleID), settingsURL: privacy("Privacy_Automation")))
-        }
+        rows += automation
         rows.append(Row(name: "Notifications", purpose: "tell you when it mutes you",
                         status: notificationStatus,
                         settingsURL: "x-apple.systempreferences:com.apple.preference.notifications"))
@@ -67,6 +62,30 @@ enum Permissions {
                         status: SMAppService.mainApp.status == .enabled ? .granted : .unknown("off"),
                         settingsURL: "x-apple.systempreferences:com.apple.LoginItems-Settings.extension"))
         return rows
+    }
+
+    private static var automatedApps: [(bundleID: String, name: String)] {
+        var apps = [("com.spotify.client", "Spotify"), ("com.apple.Music", "Music")]
+        if BrowserMedia.enabled { // browsers are only contacted when the advanced option is on
+            apps += [("com.google.Chrome", "Chrome"), ("com.apple.Safari", "Safari"),
+                     ("com.microsoft.edgemac", "Edge"), ("com.brave.Browser", "Brave"), ("com.vivaldi.Vivaldi", "Vivaldi")]
+        }
+        return apps.filter { NSWorkspace.shared.urlForApplication(withBundleIdentifier: $0.0) != nil }
+    }
+
+    private static func automationRow(_ app: (bundleID: String, name: String), _ status: Status) -> Row {
+        Row(name: "Automation → \(app.name)", purpose: "pause and resume media in \(app.name)",
+            status: status, settingsURL: privacy("Privacy_Automation"))
+    }
+
+    /// Placeholders shown while `automationRows()` runs.
+    static func automationPlaceholders() -> [Row] {
+        automatedApps.map { automationRow($0, .unknown("checking…")) }
+    }
+
+    /// Slow (asks macOS about each app, which can take a while when an app is busy): call off the main thread.
+    static func automationRows() -> [Row] {
+        automatedApps.map { automationRow($0, automationStatus($0.bundleID)) }
     }
 
     static func promptForAccessibility() {

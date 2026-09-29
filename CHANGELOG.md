@@ -4,6 +4,10 @@ Newest first. Each release needs a section here: `scripts/release.sh` uses it fo
 notes, and Hush shows it in "What's New" after an upgrade and in Settings → Updates.
 
 ## 1.1.9
+- **Settings → Permissions lists everything again.** It showed nothing while macOS was slow to answer
+  about one app; now the list appears at once and the per-app rows fill in when ready.
+- Settings, Setup and other windows open truly centred on the screen you're using, never tucked
+  under the menu bar.
 - If Homebrew has lost track of the installed app (“there is already an App at /Applications/Over&Out.app”),
   Update Now reinstalls over it instead of failing. The Homebrew cask uses the new Homebrew 7 install
   steps, so `brew` no longer prints deprecation warnings about it.

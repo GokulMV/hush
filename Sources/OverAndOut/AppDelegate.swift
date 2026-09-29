@@ -400,9 +400,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             window.orderOut(nil) // re-show here rather than switching you back to its desktop
         }
         window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        if !window.isVisible { centerOnActiveScreen(window) }
         NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
         window.orderFrontRegardless()
+    }
+
+    /// Truly centred (NSWindow.center() sits high, so a tall window ended up under the menu bar),
+    /// on the screen you're working on (the one with the pointer), and never taller than it.
+    private func centerOnActiveScreen(_ window: NSWindow) {
+        let pointer = NSEvent.mouseLocation
+        guard let screen = NSScreen.screens.first(where: { NSMouseInRect(pointer, $0.frame, false) }) ?? NSScreen.main
+        else { return }
+        let usable = screen.visibleFrame
+        var frame = window.frame
+        frame.size.height = min(frame.height, usable.height - 40)
+        frame.size.width = min(frame.width, usable.width - 40)
+        frame.origin.x = usable.midX - frame.width / 2
+        frame.origin.y = usable.midY - frame.height / 2
+        window.setFrame(frame, display: false)
     }
 
     // MARK: Setup assistant

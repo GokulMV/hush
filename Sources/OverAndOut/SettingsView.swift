@@ -64,6 +64,8 @@ struct SettingsView: View {
 
     @State private var openAtLogin = SMAppService.mainApp.status == .enabled
     @State private var permissions: [Permissions.Row] = []
+    @State private var automationRows: [Permissions.Row]?
+    @State private var checkingAutomation = false
     @State private var now = Date()
     @State private var needsSetup = false
     private let refresh = Timer.publish(every: 2, on: .main, in: .common).autoconnect()
@@ -278,10 +280,19 @@ struct SettingsView: View {
     /// Reading permissions asks macOS about other apps (Automation for Spotify, Music, browsers),
     /// which can take seconds when one of them is busy. Never on the main thread; only while the
     /// Permissions tab is showing.
+    /// Quick rows at once; the Automation rows (slow, one question to macOS per app) fill in when
+    /// ready. At most one slow check runs at a time, however often the page refreshes.
     private func loadPermissions() {
+        permissions = Permissions.rows(automation: automationRows ?? Permissions.automationPlaceholders())
+        guard !checkingAutomation else { return }
+        checkingAutomation = true
         Task.detached(priority: .utility) {
-            let rows = Permissions.rows()
-            await MainActor.run { permissions = rows }
+            let automation = Permissions.automationRows()
+            await MainActor.run {
+                automationRows = automation
+                checkingAutomation = false
+                permissions = Permissions.rows(automation: automation)
+            }
         }
     }
 
