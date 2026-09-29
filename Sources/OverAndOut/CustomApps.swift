@@ -12,11 +12,27 @@ struct CustomApp: Codable, Identifiable, Equatable {
     /// built-in names ("Turn off camera", "Mute"…).
     var cameraButton: String?
     var muteButton: String?
+    /// The button's on/off state (AXValue/AXSelected) when you picked it, i.e. while it was on.
+    var cameraOnValue: String?
+    var muteOnValue: String?
     var id: String { bundleID }
 
     func button(for kind: MeetingControl.Kind) -> String? {
         kind == .video ? cameraButton : muteButton
     }
+
+    func onValue(for kind: MeetingControl.Kind) -> String? {
+        kind == .video ? cameraOnValue : muteOnValue
+    }
+}
+
+/// A button seen in Learn Buttons, with its state at that moment.
+struct LearnableButton: Equatable, Hashable, Sendable {
+    let label: String
+    let value: String?
+
+    /// Over&Out can tell on from off for it, so it never overrides what you set yourself.
+    var isSafe: Bool { value != nil || MeetingControl.isActionLabel(label) }
 }
 
 enum CustomApps {
@@ -46,7 +62,7 @@ enum CustomApps {
 final class CustomAppsModel: ObservableObject {
     @Published var apps: [CustomApp] = CustomApps.all
     @Published var learning: CustomApp?
-    @Published var learnedLabels: [String] = []
+    @Published var learnedButtons: [LearnableButton] = []
     @Published var scanning = false
     @Published var message: String?
 
@@ -96,23 +112,25 @@ final class CustomAppsModel: ObservableObject {
         }
         scanning = true
         message = nil
-        MeetingControl.shared.buttonLabels(in: running.processIdentifier) { labels in
+        MeetingControl.shared.buttonLabels(in: running.processIdentifier) { buttons in
             Task { @MainActor in
                 self.scanning = false
-                guard !labels.isEmpty else {
+                guard !buttons.isEmpty else {
                     self.message = "No buttons found in \(app.name). Start a call in it so the call buttons are on screen, then try again."
                     return
                 }
-                self.learnedLabels = labels
+                self.learnedButtons = buttons
                 self.learning = app
             }
         }
     }
 
-    func saveButtons(camera: String?, mute: String?) {
+    func saveButtons(camera: LearnableButton?, mute: LearnableButton?) {
         guard let learning, let index = apps.firstIndex(where: { $0.bundleID == learning.bundleID }) else { return }
-        apps[index].cameraButton = camera
-        apps[index].muteButton = mute
+        apps[index].cameraButton = camera?.label
+        apps[index].cameraOnValue = camera?.value
+        apps[index].muteButton = mute?.label
+        apps[index].muteOnValue = mute?.value
         CustomApps.save(apps)
         message = "Saved. Over&Out will press these in \(learning.name) when you step away."
         self.learning = nil
@@ -152,10 +170,10 @@ struct CustomAppsSection: View {
         } header: {
             Text("Other call apps")
         } footer: {
-            Text("Zoom, Teams, Meet, FaceTime, Webex, Slack, Discord, Skype and WhatsApp are built in. Add any other app here. If an app's camera or mute isn't switched off when you step away, start a call in it and use Learn Buttons to pick its buttons.")
+            Text("Zoom, Teams, Meet, FaceTime, Webex, Slack, Discord, Skype and WhatsApp are built in. Add any other app here. If an app's camera or mute isn't switched off when you step away, start a call in it (camera and mic on) and use Learn Buttons to pick its buttons. As everywhere, Over&Out only switches off what's on, and only switches back on what it switched off: if you turned your camera off or muted yourself, it stays that way.")
         }
         .sheet(item: $model.learning) { app in
-            LearnButtonsSheet(app: app, labels: model.learnedLabels) { camera, mute in
+            LearnButtonsSheet(app: app, buttons: model.learnedButtons) { camera, mute in
                 model.saveButtons(camera: camera, mute: mute)
             } cancel: {
                 model.learning = nil
@@ -173,47 +191,56 @@ struct CustomAppsSection: View {
 /// Pick the app's camera and mute buttons from the ones it shows right now.
 struct LearnButtonsSheet: View {
     let app: CustomApp
-    let labels: [String]
-    var save: (String?, String?) -> Void
+    let buttons: [LearnableButton]
+    var save: (LearnableButton?, LearnableButton?) -> Void
     var cancel: () -> Void
 
     @State private var camera: String
     @State private var mute: String
     private static let none = "— use built-in names —"
 
-    init(app: CustomApp, labels: [String], save: @escaping (String?, String?) -> Void, cancel: @escaping () -> Void) {
+    init(app: CustomApp, buttons: [LearnableButton], save: @escaping (LearnableButton?, LearnableButton?) -> Void,
+         cancel: @escaping () -> Void) {
         self.app = app
-        self.labels = labels
+        self.buttons = buttons
         self.save = save
         self.cancel = cancel
         _camera = State(initialValue: app.cameraButton ?? Self.none)
         _mute = State(initialValue: app.muteButton ?? Self.none)
     }
 
+    /// Only buttons whose on/off state Over&Out can read: others could be switched on by mistake.
+    private var safe: [LearnableButton] { buttons.filter(\.isSafe) }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Buttons in \(app.name)").font(.title3.bold())
-            Text("These are the buttons \(app.name) shows right now. Pick the one that switches your camera off, and the one that mutes you. Over&Out presses the same button again to switch it back on when you return.")
+            Text("Your camera and mic should be on right now. Pick the button that switches your camera off, and the one that mutes you. Over&Out presses it only while it's on, and switches it back on only if it's still the way Over&Out left it, so anything you turn off yourself stays off.")
                 .fixedSize(horizontal: false, vertical: true)
                 .foregroundStyle(.secondary)
             Picker("Camera button", selection: $camera) {
                 Text(Self.none).tag(Self.none)
-                ForEach(labels, id: \.self) { Text($0).tag($0) }
+                ForEach(safe, id: \.label) { Text($0.label).tag($0.label) }
             }
             Picker("Mute button", selection: $mute) {
                 Text(Self.none).tag(Self.none)
-                ForEach(labels, id: \.self) { Text($0).tag($0) }
+                ForEach(safe, id: \.label) { Text($0.label).tag($0.label) }
+            }
+            if safe.count < buttons.count {
+                Text("\(buttons.count - safe.count) other buttons aren't listed: they don't show whether they're on or off, so pressing them could switch your camera or mic on.")
+                    .font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             HStack {
                 Spacer()
                 Button("Cancel") { cancel() }.keyboardShortcut(.cancelAction)
                 Button("Save") {
-                    save(camera == Self.none ? nil : camera, mute == Self.none ? nil : mute)
+                    save(safe.first { $0.label == camera }, safe.first { $0.label == mute })
                 }
                 .keyboardShortcut(.defaultAction)
             }
         }
         .padding(20)
-        .frame(width: 460)
+        .frame(width: 480)
     }
 }

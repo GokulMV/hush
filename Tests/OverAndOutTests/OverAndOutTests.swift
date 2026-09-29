@@ -237,3 +237,17 @@ final class NowPlayingTests: XCTestCase {
                        "never pause a meeting tab")
     }
 }
+
+final class LearnedButtonTests: XCTestCase {
+    func testOnlyLabelsThatShowTheStateAreSafeToPress() {
+        XCTAssertTrue(MeetingControl.isActionLabel("Mute"))
+        XCTAssertTrue(MeetingControl.isActionLabel("Turn off camera"))
+        XCTAssertTrue(MeetingControl.isActionLabel("Stop Video"))
+        XCTAssertFalse(MeetingControl.isActionLabel("Unmute"), "shows only while muted")
+        XCTAssertFalse(MeetingControl.isActionLabel("Muted"), "describes the state, not the action")
+        XCTAssertFalse(MeetingControl.isActionLabel("Camera off"), "describes the state, not the action")
+        XCTAssertFalse(MeetingControl.isActionLabel("Camera"), "same label on and off")
+        XCTAssertTrue(LearnableButton(label: "Camera", value: "AXValue=1").isSafe, "a reported state is enough")
+        XCTAssertFalse(LearnableButton(label: "Camera", value: nil).isSafe)
+    }
+}

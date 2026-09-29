@@ -9,6 +9,9 @@ notes, and Hush shows it in "What's New" after an upgrade and in Settings → Up
   If the app's camera or mute isn't switched off when you step away, start a call in it and press
   **Learn Buttons…**: pick its camera and mute buttons from the ones it shows, and Over&Out presses those.
   The built-in names are still tried first, so apps that already worked are unchanged.
+- **What you switch off yourself stays off**, for learned buttons too: Over&Out only presses a button
+  while it shows the camera or mic is on, and only switches back on what it switched off itself (and
+  only if it's still the way it left it). Buttons that look the same on and off aren't offered.
 - WhatsApp, Skype and FaceTime are treated as meeting apps when finding camera/mute buttons, and a few
   more common button names are recognised (“Turn off video”, “Camera off”…).
 - **Pausing gets a safety net.** Everything that paused media before still does, the same way. On top

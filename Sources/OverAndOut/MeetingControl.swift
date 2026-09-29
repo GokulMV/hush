@@ -160,29 +160,64 @@ final class MeetingControl: @unchecked Sendable {
             }
         }
         // An app you added, whose button you picked in Learn Buttons (after the built-in names,
-        // which stay first). The same button switches it off and back on.
-        if let bundleID = app.bundleIdentifier, let learned = CustomApps.app(for: bundleID)?.button(for: kind),
-           let button = findExactButton(pid: pid, label: learned) {
-            return AXUIElementPerformAction(button, kAXPressAction as CFString) == .success
+        // which stay first).
+        if let bundleID = app.bundleIdentifier, let learned = CustomApps.app(for: bundleID) {
+            return pressLearned(kind, on: on, app: learned, pid: pid)
         }
         return false
     }
 
-    /// Every button label the app shows right now, for Learn Buttons (Settings → Calls & Media).
-    func buttonLabels(in pid: pid_t, completion: @escaping @Sendable ([String]) -> Void) {
-        queue.async { [self] in
-            exposeWebContent(pid)
-            Thread.sleep(forTimeInterval: 0.6)
-            var labels: [String] = []
-            walk(pid: pid) { _, texts in
-                for text in texts where !labels.contains(text) { labels.append(text) }
-                return false
-            }
-            completion(labels)
-        }
+    // MARK: Buttons you picked (Learn Buttons)
+
+    /// What a learned button looked like after Over&Out switched it off, to switch back only that.
+    /// Only touched on `queue`.
+    private var learnedAfterOff: [pid_t: [Kind: ButtonState]] = [:]
+
+    struct ButtonState: Equatable {
+        var label: String
+        /// AXValue / AXSelected, when the button reports whether it's on.
+        var value: String?
     }
 
-    private func findExactButton(pid: pid_t, label: String) -> AXUIElement? {
+    /// Same rule as the built-in names: never override what you set yourself.
+    /// - Switching off: only if the button shows it's on right now (the state you picked it in, or
+    ///   an action label such as "Mute"/"Turn camera off" that only appears while it's on).
+    /// - Switching back on: only if it still looks exactly as Over&Out left it. If you changed it
+    ///   yourself meanwhile, it's left alone.
+    private func pressLearned(_ kind: Kind, on: Bool, app: CustomApp, pid: pid_t) -> Bool {
+        guard let label = app.button(for: kind) else { return false }
+        if !on {
+            guard let (button, now) = findState(pid: pid, label: label) else { return false }
+            if let onValue = app.onValue(for: kind) {
+                guard now.value == onValue else { return false } // already off (you did it): leave it
+            } else if !Self.isActionLabel(label) {
+                return false // can't tell whether it's on: pressing could switch it on
+            }
+            guard AXUIElementPerformAction(button, kAXPressAction as CFString) == .success else { return false }
+            Thread.sleep(forTimeInterval: 0.4)
+            let after = readState(button, fallbackLabel: label)
+            // Switched back on later only if the press visibly changed the button; one that looks
+            // the same either way can't be told apart, so it isn't pressed again.
+            if after != now { learnedAfterOff[pid, default: [:]][kind] = after }
+            return true
+        }
+        guard let after = learnedAfterOff[pid]?[kind] else { return false }
+        learnedAfterOff[pid]?[kind] = nil
+        guard let (button, now) = findState(pid: pid, label: after.label),
+              now == after else { return false } // you switched it back yourself: leave it
+        return AXUIElementPerformAction(button, kAXPressAction as CFString) == .success
+    }
+
+    /// Labels that say what pressing does, so they only show while the thing is on.
+    /// ("Muted" or "Camera off" describe the state instead, and don't count.)
+    static func isActionLabel(_ label: String) -> Bool {
+        let text = label.lowercased().trimmingCharacters(in: .whitespaces)
+        if text.hasPrefix("muted") || text.hasPrefix("unmute") { return false }
+        return ["mute", "turn off", "turn camera off", "turn video off", "stop video", "stop camera",
+                "disable camera", "disable video", "hide video"].contains { text.hasPrefix($0) }
+    }
+
+    private func findState(pid: pid_t, label: String) -> (AXUIElement, ButtonState)? {
         let wanted = label.lowercased()
         var match: AXUIElement?
         walk(pid: pid) { element, texts in
@@ -190,7 +225,43 @@ final class MeetingControl: @unchecked Sendable {
             match = element
             return true
         }
-        return match
+        guard let match else { return nil }
+        return (match, readState(match, fallbackLabel: label))
+    }
+
+    private func readState(_ element: AXUIElement, fallbackLabel: String) -> ButtonState {
+        let texts = [kAXTitleAttribute, kAXDescriptionAttribute, kAXHelpAttribute]
+            .compactMap { string(element, $0) }.filter { !$0.isEmpty }
+        return ButtonState(label: texts.first ?? fallbackLabel, value: Self.stateValue(element))
+    }
+
+    private static func stateValue(_ element: AXUIElement) -> String? {
+        for attribute in [kAXValueAttribute, kAXSelectedAttribute] {
+            var value: CFTypeRef?
+            guard AXUIElementCopyAttributeValue(element, attribute as CFString, &value) == .success,
+                  let value else { continue }
+            if let number = value as? NSNumber { return "\(attribute)=\(number)" }
+            if let text = value as? String, !text.isEmpty { return "\(attribute)=\(text)" }
+        }
+        return nil
+    }
+
+    /// Every button the app shows right now, with its current state, for Learn Buttons. Start a
+    /// call with camera and mic on first: the state seen now is remembered as "on".
+    func buttonLabels(in pid: pid_t, completion: @escaping @Sendable ([LearnableButton]) -> Void) {
+        queue.async { [self] in
+            exposeWebContent(pid)
+            Thread.sleep(forTimeInterval: 0.6)
+            var buttons: [LearnableButton] = []
+            walk(pid: pid) { element, texts in
+                let value = Self.stateValue(element)
+                for text in texts where !buttons.contains(where: { $0.label == text }) {
+                    buttons.append(LearnableButton(label: text, value: value))
+                }
+                return false
+            }
+            completion(buttons)
+        }
     }
 
     /// Chrome listens to AXEnhancedUserInterface (what VoiceOver sets); Electron apps to
