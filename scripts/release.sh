@@ -96,8 +96,12 @@ CASK
 echo "▶ Publishing release v$VERSION"
 git add Resources/Info.plist "Casks/$CASK.rb" CHANGELOG.md
 git commit -m "Release $VERSION" || true
+# Someone (or Claude) may have pushed to this branch while the build ran: bring that in first,
+# or the push is refused and the release stops half-way.
+BRANCH="$(git branch --show-current)"
+git pull --no-rebase --no-edit origin "$BRANCH"
 git tag -f "v$VERSION"
-git push
+git push origin "$BRANCH"
 git push -f origin "v$VERSION"
 if gh release view "v$VERSION" >/dev/null 2>&1; then
     gh release upload "v$VERSION" "$ZIP" --clobber
