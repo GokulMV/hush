@@ -1,8 +1,8 @@
 # Written by scripts/release.sh and copied to the tap repo GokulMV/homebrew-tap.
 # Install with: brew install --cask gokulmv/tap/over-and-out
 cask "over-and-out" do
-  version "1.1.11"
-  sha256 "5d89549c9fe103cbf41ab8a9df26f764043c570399e1d7191bf3e39ca6ab3b78"
+  version "1.1.12"
+  sha256 "a0657f7bb1c22af5d079def2aa71fec871ac7020fe4fa8d25a2142e3399997ec"
 
   url "https://github.com/GokulMV/hush/releases/download/v#{version}/OverAndOut-#{version}.zip"
   name "Over&Out"
@@ -10,7 +10,7 @@ cask "over-and-out" do
   homepage "https://github.com/GokulMV/hush"
 
   depends_on macos: :ventura
-
+  depends_on arch: :arm64
 
   app "Over&Out.app"
 
