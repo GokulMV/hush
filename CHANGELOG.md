@@ -7,6 +7,8 @@ notes, and Hush shows it in "What's New" after an upgrade and in Settings → Up
 - **Permissions now survive updates.** Releases are signed with the same certificate every time, so
   macOS recognises each update as the same app and keeps Camera and Accessibility. (This update asks
   one last time; after that, updates keep them.)
+- **Turning off “Keep watching” (or closing Camera Preview) turns the camera off right away**, unless a call
+  or video still needs it; the menu now says why the camera is on (e.g. “Brave Browser is playing”).
 
 ## 1.1.2
 - **No more "Not Responding" when macOS's audio service is busy**: every audio query (who's using the mic

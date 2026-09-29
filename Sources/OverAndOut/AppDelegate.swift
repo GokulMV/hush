@@ -251,7 +251,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             return "📷  Over&Out camera: paused until \(until.formatted(date: .omitted, time: .shortened))"
         }
         if engine.cameraStalled { return "📷  Over&Out camera: not receiving video (restarting…)" }
-        if engine.isSensing { return "📷  Over&Out camera: watching (green light on)" }
+        if engine.isSensing {
+            let why = engine.cameraReasonsText
+            return why.isEmpty ? "📷  Over&Out camera: turning off…" : "📷  Watching (green light on): \(why)"
+        }
         return "📷  Over&Out camera: on, waits for a call or video"
     }
 

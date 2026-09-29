@@ -181,11 +181,15 @@ final class OverAndOutEngine {
             leavePresenceMode()
             return
         }
-        let needed = previewHandler != nil
-            || settings.bool(Settings.Key.alwaysWatch)
-            || callPhase == .inCall
-            || anyMediaAudible
-            || ledger.isEngaged(.away) || ledger.isEngaged(.phone)
+        let reasons = cameraReasons()
+        let needed = !reasons.isEmpty
+        // Only a call or video that just ended keeps the camera on a little longer (so it doesn't
+        // flicker between videos). If the last reasons were your own switches (Keep watching,
+        // Camera Preview), turning them off turns the camera off right away.
+        let userOnly = !lastCameraReasons.isEmpty
+            && lastCameraReasons.allSatisfy { $0 == .keepWatching || $0 == .preview }
+        lastCameraReasons = reasons
+        cameraReasonsText = reasons.map(\.text).joined(separator: ", ")
 
         // Watchdog: a session that runs but delivers no frames can't see you leave. Restart it
         // (at most every 10 s) instead of silently watching nothing.
@@ -201,6 +205,10 @@ final class OverAndOutEngine {
                 presence = .present
                 sensor.start()
             }
+        } else if sensor.isRunning && userOnly {
+            sensor.stop()
+            lastReading = nil
+            sensingIdleSince = nil
         } else if sensor.isRunning {
             let idleSince = sensingIdleSince ?? now
             sensingIdleSince = idleSince
@@ -210,6 +218,41 @@ final class OverAndOutEngine {
                 sensingIdleSince = nil
             }
         }
+    }
+
+    /// Why the camera is needed right now (shown in the menu, so it's never a mystery).
+    enum CameraReason: Equatable {
+        case preview, keepWatching, call(String), media(String), stepAway
+
+        var text: String {
+            switch self {
+            case .preview: return "Camera Preview is open"
+            case .keepWatching: return "Keep watching is on"
+            case .call(let app): return "you're in a call (\(app))"
+            case .media(let app): return "\(app) is playing"
+            case .stepAway: return "waiting for you to come back"
+            }
+        }
+    }
+
+    private var lastCameraReasons: [CameraReason] = []
+    /// e.g. "Brave Browser is playing" — empty when the camera isn't needed.
+    private(set) var cameraReasonsText = ""
+
+    private func cameraReasons() -> [CameraReason] {
+        var reasons: [CameraReason] = []
+        if previewHandler != nil { reasons.append(.preview) }
+        if settings.bool(Settings.Key.alwaysWatch) { reasons.append(.keepWatching) }
+        if callPhase == .inCall {
+            reasons.append(.call(callApps.map(Self.displayName).sorted().first ?? "an app"))
+        }
+        if let playing = outputSince.keys.first(where: {
+            AppClassifier.isMediaSource($0) || AppClassifier.scriptablePlayers.contains($0)
+        }) {
+            reasons.append(.media(playing == AppClassifier.unknownOutput ? "Something" : Self.displayName(playing)))
+        }
+        if ledger.isEngaged(.away) || ledger.isEngaged(.phone) { reasons.append(.stepAway) }
+        return reasons
     }
 
     private func handle(_ reading: PresenceReading) {
@@ -423,9 +466,6 @@ final class OverAndOutEngine {
 
     // MARK: What's playing
 
-    private var anyMediaAudible: Bool {
-        outputSince.keys.contains { AppClassifier.isMediaSource($0) || AppClassifier.scriptablePlayers.contains($0) }
-    }
 
     /// How to pause what's playing (Spotify/Music are always checked separately):
     /// - keyTarget: press ⏯. Used for players and for browsers that aren't hosting the call,
