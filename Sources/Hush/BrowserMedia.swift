@@ -196,6 +196,43 @@ enum BrowserMedia {
         return (.count(Int(output) ?? 1), output)
     }
 
+    /// Brings the first meeting tab (Meet, Teams, Zoom web…) to the front: selects it in its window
+    /// and raises the browser. Background tabs are throttled, and a meeting won't finish turning the
+    /// camera/mic back on until its tab is visible. Returns true if a meeting tab was found.
+    @discardableResult
+    static func focusMeetingTab(in bundleID: String) -> Bool {
+        guard let dialect = supported[bundleID] else { return false }
+        let isMeeting = meetingURLParts.map { "u contains \"\($0)\"" }.joined(separator: " or ")
+        let select: String
+        switch dialect {
+        case .chromium: select = "set active tab index of w to i"
+        case .safari: select = "set current tab of w to t"
+        case .arc: select = "tell t to select"
+        }
+        let script = """
+            tell application id "\(bundleID)"
+                repeat with w in windows
+                    set i to 0
+                    repeat with t in tabs of w
+                        set i to i + 1
+                        set u to ""
+                        try
+                            set u to (URL of t) as text
+                        end try
+                        if \(isMeeting) then
+                            \(select)
+                            set index of w to 1
+                            activate
+                            return "focused"
+                        end if
+                    end repeat
+                end repeat
+                return "none"
+            end tell
+            """
+        return osascript(script) == "focused"
+    }
+
     // MARK: AppleScript
 
     enum Outcome { case count(Int), blocked, notAuthorized, failed }

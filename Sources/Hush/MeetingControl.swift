@@ -142,6 +142,7 @@ final class MeetingControl: @unchecked Sendable {
         // from Accessibility.
         if BrowserMedia.enabled, let bundleID = app.bundleIdentifier, BrowserMedia.supported[bundleID] != nil,
            case .count(let clicked) = BrowserMedia.meetingButton(in: bundleID, labels: labels, click: true), clicked > 0 {
+            if on { finishTurningOn(kind, in: bundleID) }
             return true
         }
         guard AXIsProcessTrusted() else { return false }
@@ -169,6 +170,25 @@ final class MeetingControl: @unchecked Sendable {
         let app = AXUIElementCreateApplication(pid)
         _ = AXUIElementSetAttributeValue(app, "AXManualAccessibility" as CFString, kCFBooleanTrue)
         _ = AXUIElementSetAttributeValue(app, "AXEnhancedUserInterface" as CFString, kCFBooleanTrue)
+    }
+
+    /// Browsers throttle background tabs, so a meeting may not finish turning the camera/mic back on
+    /// until its tab is visible. Check a moment later; if it's still off, bring the meeting tab to
+    /// the front and, only if it's *still* off there, click once more (never a blind second toggle).
+    private func finishTurningOn(_ kind: Kind, in bundleID: String) {
+        let turnOn = Self.labels(kind, on: true)
+        func stillOff() -> Bool {
+            if case .count(let n) = BrowserMedia.meetingButton(in: bundleID, labels: turnOn, click: false) { return n > 0 }
+            return false
+        }
+        Thread.sleep(forTimeInterval: 1.5)
+        guard stillOff(), BrowserMedia.focusMeetingTab(in: bundleID) else { return }
+        Thread.sleep(forTimeInterval: 1.5) // the queued click often completes once the tab is visible
+        if stillOff() {
+            _ = BrowserMedia.meetingButton(in: bundleID, labels: turnOn, click: true)
+        }
+        Notifier.post("Your meeting is in front again",
+                      "Hush brought the meeting tab forward so it could turn your \(kind == .video ? "camera" : "microphone") back on.")
     }
 
     /// Button labels (lower-cased) that perform the wanted change. Real labels often carry a
