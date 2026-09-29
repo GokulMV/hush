@@ -1,8 +1,8 @@
 # Written by scripts/release.sh and copied to the tap repo GokulMV/homebrew-tap.
 # Install with: brew install --cask gokulmv/tap/over-and-out
 cask "over-and-out" do
-  version "1.1.3"
-  sha256 "57e657b94ba7a53bbf0d1bf03044dd64b1afded8f7b7db92e1b75c6efaf55aac"
+  version "1.1.4"
+  sha256 "1c4404350b1c091805c0796e3c2abd320e364d5c9a58016a1f4aac40d5f05c06"
 
   url "https://github.com/GokulMV/hush/releases/download/v#{version}/OverAndOut-#{version}.zip"
   name "Over&Out"
@@ -16,6 +16,10 @@ cask "over-and-out" do
 
   # Over&Out isn't notarized yet; without this macOS refuses to open a downloaded copy.
   postflight do
+    # The old version's Accessibility ✓ stays visible but no longer applies to the new build;
+    # clear it so macOS asks afresh instead of showing a switch that does nothing.
+    system_command "/usr/bin/tccutil", args: ["reset", "Accessibility", "com.gokulmv.overandout"],
+                   must_succeed: false
     system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{appdir}/Over&Out.app"]
   end
 
