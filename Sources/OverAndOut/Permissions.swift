@@ -78,7 +78,7 @@ enum Permissions {
     /// signature, so after an update the old Over&Out row can still look switched on while macOS
     /// ignores it — and toggling it does nothing. Clearing our own row first (only ours, by bundle ID)
     /// makes macOS add a fresh one for this version. Then it watches for the grant and says so.
-    static func requestAccessibility(clearStaleEntry: Bool = true, openSettings: Bool = true) {
+    static func requestAccessibility(clearStaleEntry: Bool = true, prompt: Bool = true, openSettings: Bool = true) {
         guard !accessibilityGranted else { return }
         DispatchQueue.global(qos: .userInitiated).async {
             if clearStaleEntry, let bundleID = Bundle.main.bundleIdentifier {
@@ -91,7 +91,7 @@ enum Permissions {
                 reset.waitUntilExit()
             }
             DispatchQueue.main.async {
-                promptForAccessibility()
+                if prompt { promptForAccessibility() }
                 if openSettings { openPrivacySettings("Privacy_Accessibility") }
                 watchForAccessibility()
             }

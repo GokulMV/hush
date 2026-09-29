@@ -9,6 +9,9 @@ notes, and Hush shows it in "What's New" after an upgrade and in Settings → Up
   quiet browser (and nameless background helpers). The menu's “Camera sees” line says why it's on.
 - **Settings drops down from the menu-bar icon**, like other menu-bar apps: no window buttons, and it
   closes when you click elsewhere. Cleaner icon tabs replace the old segmented tab bar.
+- **One thing at a time after an update or first launch.** If something needs permission, only the
+  Setup checklist opens (it asks for each permission when you press Allow); What's New or the welcome
+  card follows once you close it, instead of windows and macOS prompts piling up together.
 
 ## 1.1.4
 - **Accessibility no longer gets stuck after an update.** macOS kept showing the old version's switch as

@@ -9,9 +9,11 @@ enum Notifier {
     /// Shows banners even while the Settings window makes Over&Out the active app.
     private static let presenter = Presenter()
 
-    static func requestPermission() {
+    /// `ask: false` only hooks up the presenter; the Setup checklist asks for permission itself.
+    static func requestPermission(ask: Bool = true) {
         guard available else { return }
         UNUserNotificationCenter.current().delegate = presenter
+        guard ask else { return }
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert]) { _, _ in }
     }
 

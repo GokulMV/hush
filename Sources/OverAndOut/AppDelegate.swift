@@ -30,12 +30,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         refreshIcon()
         watchAppearance()
 
-        Notifier.requestPermission()
+        // One thing at a time at launch: when the Setup checklist will open, it asks for each
+        // permission itself, so no macOS prompts stack up behind it.
+        let setupComing = Self.setupNeeded
+        Notifier.requestPermission(ask: !setupComing)
         if !Permissions.accessibilityGranted {
             // After an update the old ✓ belongs to the previous build; clear it so macOS asks afresh.
             let updated = UserDefaults.standard.string(forKey: SettingsKey.lastRunVersion)
                 .map { $0 != AppInfo.version } ?? false
-            Permissions.requestAccessibility(clearStaleEntry: updated, openSettings: false)
+            Permissions.requestAccessibility(clearStaleEntry: updated, prompt: !setupComing, openSettings: false)
         }
 
         HotKeys.shared.register(keyCode: kVK_ANSI_M) { [weak self] in self?.engine.toggleMic() }
@@ -47,7 +50,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         timer = Timer.scheduledTimer(timeInterval: 0.5, target: self, selector: #selector(tick), userInfo: nil, repeats: true)
         tick()
         greet()
-        showWhatsNewIfUpgraded()
         updates.startAutomaticChecks()
     }
 
@@ -101,19 +103,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
 
     /// Welcome card on first launch, a brief toast afterwards: proof it's installed and where it lives.
     private func greet() {
+        let upgradedFrom = upgradedFromVersion()
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: 600_000_000) // let the status item get its on-screen frame
-            let defaults = UserDefaults.standard
-            if defaults.bool(forKey: SettingsKey.hasShownWelcome) {
-                banner.showRunningToast(below: statusItem.button)
-            } else {
-                defaults.set(true, forKey: SettingsKey.hasShownWelcome)
-                showWelcome()
-                Notifier.post("Over&Out is installed", "It lives in your menu bar. Press ⌃⌥⌘G to turn it on or off.")
-            }
             if Self.setupNeeded {
+                // Setup first; the welcome card or What's New follows once it's closed.
+                afterSetup = { [weak self] in self?.greetAfterSetup(upgradedFrom: upgradedFrom) }
                 openSetup()
+            } else {
+                greetAfterSetup(upgradedFrom: upgradedFrom)
             }
+        }
+    }
+
+    /// Runs when the Setup window closes (Finish, Skip or the close button).
+    private var afterSetup: (() -> Void)?
+
+    private func greetAfterSetup(upgradedFrom: String?) {
+        let defaults = UserDefaults.standard
+        if let upgradedFrom {
+            showWhatsNew(since: upgradedFrom)
+        } else if defaults.bool(forKey: SettingsKey.hasShownWelcome) {
+            banner.showRunningToast(below: statusItem.button)
+        } else {
+            defaults.set(true, forKey: SettingsKey.hasShownWelcome)
+            showWelcome()
         }
     }
 
@@ -366,14 +380,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         updates.tabRequest = tab
     }
 
-    /// Once after an upgrade: the changelog entries since the version that ran last.
-    private func showWhatsNewIfUpgraded() {
+    /// The version that ran before this one, when this launch is an upgrade (What's New shows once).
+    private func upgradedFromVersion() -> String? {
         let defaults = UserDefaults.standard
         let current = AppInfo.version
         let last = defaults.string(forKey: SettingsKey.lastRunVersion)
         defaults.set(current, forKey: SettingsKey.lastRunVersion)
-        guard let last, AppVersion(current) > AppVersion(last) else { return } // fresh install or same version
-        showWhatsNew(since: last)
+        guard let last, AppVersion(current) > AppVersion(last) else { return nil } // fresh install or same version
+        return last
     }
 
     /// `since`: show entries newer than that version; nil shows the latest few.
@@ -419,6 +433,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             window.title = "Over&Out Setup"
             window.styleMask = [.titled, .closable, .resizable]
             window.isReleasedWhenClosed = false
+            window.delegate = self
             window.center()
             setupWindow = window
         }
@@ -449,6 +464,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     }
 
     func windowWillClose(_ notification: Notification) {
+        if (notification.object as? NSWindow) === setupWindow, let next = afterSetup {
+            afterSetup = nil
+            DispatchQueue.main.async { next() }
+            return
+        }
         guard (notification.object as? NSWindow) === previewWindow else { return }
         engine.previewHandler = nil // stops preview frames; the camera follows the normal rules again
         previewModel.image = nil
