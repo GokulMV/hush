@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 
 /// A floating card that drops down under the menu-bar icon: the welcome message on first
-/// launch, and a short "Hush is running" toast on later launches.
+/// launch, and a short "Over&Out is running" toast on later launches.
 @MainActor
 final class Banner {
     private var panel: NSPanel?
@@ -11,11 +11,11 @@ final class Banner {
     func showWelcome(below anchor: NSStatusBarButton?, openSettings: @escaping () -> Void) {
         show(below: anchor, dismissAfter: 30) { close in
             BannerView(
-                title: "Hush is installed and running",
-                message: "Look for its icon in your menu bar, up here. Hush mutes your mic, turns your meeting camera off and pauses videos when you step away or put your phone to your ear, and turns everything back on when you return.",
+                title: "Over&Out is installed and running",
+                message: "Look for its icon in your menu bar, up here. Over&Out mutes your mic, turns your meeting camera off and pauses videos when you step away or put your phone to your ear, and turns everything back on when you return.",
                 shortcuts: [
-                    ("⌃⌥⌘H", "Open Hush's menu"),
-                    ("⌃⌥⌘G", "Turn Hush on / off"),
+                    ("⌃⌥⌘H", "Open Over&Out's menu"),
+                    ("⌃⌥⌘G", "Turn Over&Out on / off"),
                     ("⌃⌥⌘M", "Mute / unmute mic"),
                     ("⌃⌥⌘P", "Panic mode"),
                 ],
@@ -25,10 +25,10 @@ final class Banner {
         }
     }
 
-    /// When Hush is opened again while it's already running (Finder, Spotlight, Launchpad).
+    /// When Over&Out is opened again while it's already running (Finder, Spotlight, Launchpad).
     func showAlreadyRunning(below anchor: NSStatusBarButton?, openSettings: @escaping () -> Void) {
         show(below: anchor, dismissAfter: 8) { close in
-            BannerView(title: "Hush is already running",
+            BannerView(title: "Over&Out is already running",
                        message: "It lives in your menu bar, up here. Click its icon for status and quick controls.",
                        shortcuts: [],
                        primary: ("Open Settings", { close(); openSettings() }),
@@ -38,7 +38,7 @@ final class Banner {
 
     func showRunningToast(below anchor: NSStatusBarButton?) {
         show(below: anchor, dismissAfter: 3) { close in
-            BannerView(title: "Hush is running", message: "It's in your menu bar.", shortcuts: [],
+            BannerView(title: "Over&Out is running", message: "It's in your menu bar.", shortcuts: [],
                        primary: nil, secondary: nil)
         }
     }

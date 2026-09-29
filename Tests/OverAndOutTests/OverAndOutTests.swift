@@ -1,5 +1,5 @@
 import XCTest
-@testable import Hush
+@testable import OverAndOut
 
 final class LedgerTests: XCTestCase {
     func testOverlappingReasonsReleaseOnlyWhenLastOneGoes() {
@@ -89,8 +89,8 @@ final class AppClassifierTests: XCTestCase {
 
     func testSiriDoesNotCountAsACall() {
         XCTAssertFalse(AppClassifier.countsAsCall(micUser: "com.apple.SiriNCService", ownBundleID: nil))
-        XCTAssertFalse(AppClassifier.countsAsCall(micUser: "com.gokulmv.hush", ownBundleID: "com.gokulmv.hush"))
-        XCTAssertTrue(AppClassifier.countsAsCall(micUser: "us.zoom.xos", ownBundleID: "com.gokulmv.hush"))
+        XCTAssertFalse(AppClassifier.countsAsCall(micUser: "com.gokulmv.overandout", ownBundleID: "com.gokulmv.overandout"))
+        XCTAssertTrue(AppClassifier.countsAsCall(micUser: "us.zoom.xos", ownBundleID: "com.gokulmv.overandout"))
     }
 }
 

@@ -17,7 +17,7 @@ struct AboutView: View {
                     Image(nsImage: NSApp.applicationIconImage)
                         .resizable()
                         .frame(width: 96, height: 96)
-                    Text("Hush").font(.largeTitle.bold())
+                    Text("Over&Out").font(.largeTitle.bold())
                     Text("Version \(AppInfo.version) (\(build))")
                         .foregroundStyle(.secondary)
                         .textSelection(.enabled)
@@ -33,14 +33,14 @@ struct AboutView: View {
             Section("Privacy") {
                 Label("The camera is analysed on this Mac, a few frames a second, and nothing is saved or sent anywhere.",
                       systemImage: "lock.shield")
-                Label("Hush never listens to your microphone; it only checks whether an app is using it.",
+                Label("Over&Out never listens to your microphone; it only checks whether an app is using it.",
                       systemImage: "mic.slash")
                 Label("Network use: checking GitHub for updates, and a one-time download of the phone detector from Apple.",
                       systemImage: "network")
             }
 
             Section("Links") {
-                Link(destination: repoURL) { Label("Hush on GitHub", systemImage: "chevron.left.forwardslash.chevron.right") }
+                Link(destination: repoURL) { Label("Over&Out on GitHub", systemImage: "chevron.left.forwardslash.chevron.right") }
                 Link(destination: repoURL.appendingPathComponent("releases")) { Label("All releases", systemImage: "shippingbox") }
                 Link(destination: repoURL.appendingPathComponent("issues/new")) { Label("Report a problem or suggest a feature", systemImage: "exclamationmark.bubble") }
                 Button { showWhatsNew() } label: { Label("What's new in this version", systemImage: "sparkles") }

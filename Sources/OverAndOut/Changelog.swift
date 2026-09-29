@@ -57,7 +57,7 @@ enum Changelog {
     }
 }
 
-/// "What's New in Hush" — shown once after an upgrade, and from Settings.
+/// "What's New in Over&Out" — shown once after an upgrade, and from Settings.
 struct WhatsNewView: View {
     let entries: [Changelog.Entry]
     var close: @MainActor () -> Void
@@ -67,7 +67,7 @@ struct WhatsNewView: View {
             HStack(spacing: 12) {
                 Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 48, height: 48)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("What's New in Hush \(AppInfo.version)").font(.title2.bold())
+                    Text("What's New in Over&Out \(AppInfo.version)").font(.title2.bold())
                     Text("Here's what changed.").foregroundStyle(.secondary)
                 }
             }

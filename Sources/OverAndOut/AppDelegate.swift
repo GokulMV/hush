@@ -5,7 +5,7 @@ import SwiftUI
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWindowDelegate {
     private var statusItem: NSStatusItem!
-    private var engine: HushEngine!
+    private var engine: OverAndOutEngine!
     private var timer: Timer?
     private var lastIcon = ""
     private var appearanceObservation: NSKeyValueObservation?
@@ -19,7 +19,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     private var settings: Settings { .shared }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        engine = HushEngine()
+        engine = OverAndOutEngine()
         PhoneDetector.shared.prepare() // loads, or downloads in the background (first launch only)
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         let menu = NSMenu()
@@ -60,8 +60,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             banner.showAlreadyRunning(below: statusItem.button) { [weak self] in self?.openSettings() }
         } else {
             openSettings()
-            Notifier.post("Hush's menu-bar icon is hidden",
-                          "Your menu bar is full, so macOS hid it (often behind the notch). Press ⌃⌥⌘H any time to open Hush's menu.")
+            Notifier.post("Over&Out's menu-bar icon is hidden",
+                          "Your menu bar is full, so macOS hid it (often behind the notch). Press ⌃⌥⌘H any time to open Over&Out's menu.")
         }
         return false
     }
@@ -73,14 +73,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         return screen.frame.intersects(window.frame)
     }
 
-    /// ⌃⌥⌘H: Hush's menu at the mouse pointer, works even when the icon is hidden.
+    /// ⌃⌥⌘H: Over&Out's menu at the mouse pointer, works even when the icon is hidden.
     private func showMenuAtPointer() {
         guard let menu = statusItem.menu else { return }
         NSApp.activate(ignoringOtherApps: true) // a background app's pop-up menu wouldn't take clicks
         menu.popUp(positioning: nil, at: NSEvent.mouseLocation, in: nil)
     }
 
-    /// Setup isn't finished, or a permission Hush can't work without is missing (every reinstall
+    /// Setup isn't finished, or a permission Over&Out can't work without is missing (every reinstall
     /// resets Accessibility, so this also brings Setup back after an update).
     static var setupNeeded: Bool {
         if !UserDefaults.standard.bool(forKey: SettingsKey.hasCompletedSetup) { return true }
@@ -103,7 +103,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             } else {
                 defaults.set(true, forKey: SettingsKey.hasShownWelcome)
                 showWelcome()
-                Notifier.post("Hush is installed", "It lives in your menu bar. Press ⌃⌥⌘G to turn it on or off.")
+                Notifier.post("Over&Out is installed", "It lives in your menu bar. Press ⌃⌥⌘G to turn it on or off.")
             }
             if Self.setupNeeded {
                 openSetup()
@@ -124,7 +124,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         enum Look { case brand(slashed: Bool), symbol(String, MenuBarIcon.Alert?) }
         let (look, tip): (Look, String) = {
             if !settings.enabled && !engine.panicActive && !MicMuter.isMuted {
-                return (.brand(slashed: true), "Hush is off (⌃⌥⌘G to turn on)")
+                return (.brand(slashed: true), "Over&Out is off (⌃⌥⌘G to turn on)")
             }
             if engine.panicActive {
                 return (.symbol("exclamationmark.shield.fill", .warn), "Panic mode: everything muted and paused")
@@ -136,12 +136,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
                 return (.symbol("figure.walk", .warn), "You're away: mic muted, camera off, media paused")
             }
             if MicMuter.isMuted {
-                return (.symbol("mic.slash.fill", nil), "Mic muted by Hush")
+                return (.symbol("mic.slash.fill", nil), "Mic muted by Over&Out")
             }
             if engine.callPhase == .inCall {
                 return (.symbol("mic.fill", .live), "In a call. Your mic is LIVE")
             }
-            return (.brand(slashed: false), "Hush is watching")
+            return (.brand(slashed: false), "Over&Out is watching")
         }()
 
         let key: String
@@ -183,7 +183,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
 
-        menu.addItem(item(settings.enabled ? "Turn Hush Off" : "Turn Hush On", #selector(toggleEnabled), key: "g"))
+        menu.addItem(item(settings.enabled ? "Turn Over&Out Off" : "Turn Over&Out On", #selector(toggleEnabled), key: "g"))
         menu.addItem(.separator())
         if settings.enabled {
             menu.addItem(info(callLine))
@@ -201,14 +201,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
 
         menu.addItem(.separator())
         menu.addItem(info(cameraStatusLine))
-        menu.addItem(item(settings.cameraActive ? "Turn Hush Camera Off" : "Turn Hush Camera On", #selector(toggleCamera), key: "c"))
+        menu.addItem(item(settings.cameraActive ? "Turn Over&Out Camera Off" : "Turn Over&Out Camera On", #selector(toggleCamera), key: "c"))
         let pauses = [15, 30, 60, 120].map { minutes -> NSMenuItem in
             let menuItem = item(minutes < 60 ? "\(minutes) minutes" : minutes == 60 ? "1 hour" : "\(minutes / 60) hours",
                                 #selector(pauseCamera(_:)), modifiers: [])
             menuItem.representedObject = minutes
             return menuItem
         }
-        menu.addItem(submenu("Pause Hush Camera For", pauses))
+        menu.addItem(submenu("Pause Over&Out Camera For", pauses))
 
         menu.addItem(.separator())
         if !Permissions.accessibilityGranted {
@@ -219,15 +219,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             menu.addItem(item("⚠️ Allow Camera (for presence detection)…", #selector(openCamera), modifiers: []))
         }
         if let version = updates.availableVersion {
-            menu.addItem(item("⬆️ Update Available: Hush \(version)…", #selector(openUpdates), modifiers: []))
+            menu.addItem(item("⬆️ Update Available: Over&Out \(version)…", #selector(openUpdates), modifiers: []))
         }
         menu.addItem(item("Setup Assistant…", #selector(openSetup), modifiers: []))
         menu.addItem(item("Test Meeting Controls…", #selector(testMeetingControls), modifiers: []))
         menu.addItem(item("Camera Preview (Test Detection)…", #selector(openCameraPreview), modifiers: []))
         menu.addItem(item("Settings…", #selector(openSettings), key: ",", modifiers: .command))
         menu.addItem(item("Check for Updates…", #selector(checkForUpdates), modifiers: []))
-        menu.addItem(item("About Hush", #selector(openAbout), modifiers: []))
-        menu.addItem(item("Quit Hush", #selector(quit), key: "q", modifiers: .command))
+        menu.addItem(item("About Over&Out", #selector(openAbout), modifiers: []))
+        menu.addItem(item("Quit Over&Out", #selector(quit), key: "q", modifiers: .command))
     }
 
     private var callLine: String {
@@ -235,7 +235,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         case .idle: return "📞  No call"
         case .ringing: return "📳  Phone ringing"
         case .inCall:
-            let names = engine.callApps.map(HushEngine.displayName).sorted().joined(separator: ", ")
+            let names = engine.callApps.map(OverAndOutEngine.displayName).sorted().joined(separator: ", ")
             return "📞  In a call (\(names))"
         }
     }
@@ -246,13 +246,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     }
 
     private var cameraStatusLine: String {
-        if !settings.presenceEnabled { return "📷  Hush camera: off" }
+        if !settings.presenceEnabled { return "📷  Over&Out camera: off" }
         if let until = settings.cameraPausedUntil {
-            return "📷  Hush camera: paused until \(until.formatted(date: .omitted, time: .shortened))"
+            return "📷  Over&Out camera: paused until \(until.formatted(date: .omitted, time: .shortened))"
         }
-        if engine.cameraStalled { return "📷  Hush camera: not receiving video (restarting…)" }
-        if engine.isSensing { return "📷  Hush camera: watching (green light on)" }
-        return "📷  Hush camera: on, waits for a call or video"
+        if engine.cameraStalled { return "📷  Over&Out camera: not receiving video (restarting…)" }
+        if engine.isSensing { return "📷  Over&Out camera: watching (green light on)" }
+        return "📷  Over&Out camera: on, waits for a call or video"
     }
 
     /// Live view of the latest frame, so you can test the detection.
@@ -305,7 +305,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
                                     showWhatsNew: { [weak self] in self?.showWhatsNew(since: nil) },
                                     updates: updates)
             let window = NSWindow(contentViewController: NSHostingController(rootView: view))
-            window.title = "Hush Settings"
+            window.title = "Over&Out Settings"
             window.styleMask = [.titled, .closable, .miniaturizable]
             window.isReleasedWhenClosed = false
             window.center()
@@ -345,7 +345,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         let view = WhatsNewView(entries: entries) { [weak self] in self?.whatsNewWindow?.close() }
         let window = whatsNewWindow ?? NSWindow(contentViewController: NSHostingController(rootView: view))
         window.contentViewController = NSHostingController(rootView: view)
-        window.title = "What's New in Hush"
+        window.title = "What's New in Over&Out"
         window.styleMask = [.titled, .closable]
         window.isReleasedWhenClosed = false
         window.center()
@@ -353,7 +353,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         present(window)
     }
 
-    /// Shows a Hush window on the desktop (Space) you're on. Hush's windows appear on every
+    /// Shows a Over&Out window on the desktop (Space) you're on. Over&Out's windows appear on every
     /// desktop and over full-screen apps, so they follow you when you swipe between desktops
     /// instead of staying behind on the one where they were opened.
     private func present(_ window: NSWindow?) {
@@ -379,7 +379,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
                 self?.setupWindow?.close()
             }
             let window = NSWindow(contentViewController: NSHostingController(rootView: view))
-            window.title = "Hush Setup"
+            window.title = "Over&Out Setup"
             window.styleMask = [.titled, .closable, .resizable]
             window.isReleasedWhenClosed = false
             window.center()
@@ -396,7 +396,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         }
         if previewWindow == nil {
             let window = NSWindow(contentViewController: NSHostingController(rootView: CameraPreviewView(model: previewModel)))
-            window.title = "Hush Camera Preview"
+            window.title = "Over&Out Camera Preview"
             window.styleMask = [.titled, .closable, .resizable, .miniaturizable]
             window.isReleasedWhenClosed = false
             window.delegate = self
@@ -430,7 +430,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     @objc private func toggleMic() { engine.toggleMic() }
     @objc private func togglePanic() { engine.togglePanic() }
 
-    /// Shows what Hush can see in each meeting app and browser, so a failure has a clear reason.
+    /// Shows what Over&Out can see in each meeting app and browser, so a failure has a clear reason.
     @objc private func testMeetingControls() {
         MeetingControl.shared.diagnose(engine.meetingApps()) { meetingReport in
             BrowserMedia.status { mediaReport in

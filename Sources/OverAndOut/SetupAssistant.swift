@@ -74,7 +74,7 @@ final class SetupModel: ObservableObject {
         }
     }
 
-    /// What Hush saw, in plain words: the menu tick and the browser's own reply.
+    /// What Over&Out saw, in plain words: the menu tick and the browser's own reply.
     nonisolated static func explain(reply: String, ticked: Bool?) -> String {
         var parts: [String] = []
         switch ticked {
@@ -109,7 +109,7 @@ final class SetupModel: ObservableObject {
                 let menus = BrowserSetup.openMenuForUser(id)
                 let hint: String
                 if let menus, let first = menus.first {
-                    hint = "Hush opened \(BrowserMedia.name(id))'s \(first) menu at the top of the screen. Click "
+                    hint = "Over&Out opened \(BrowserMedia.name(id))'s \(first) menu at the top of the screen. Click "
                         + (menus.dropFirst().map { "\($0) → " }.joined()) + "“Allow JavaScript from Apple Events”, then press Check Again."
                 } else {
                     hint = BrowserMedia.howToAllow(id) + " Then press Check Again."
@@ -147,7 +147,7 @@ final class SetupModel: ObservableObject {
     }
 }
 
-/// First-launch checklist: everything Hush needs, each with a live status and a one-click fix.
+/// First-launch checklist: everything Over&Out needs, each with a live status and a one-click fix.
 struct SetupView: View {
     @ObservedObject var model: SetupModel
     var finish: @MainActor (_ browsersReady: Bool) -> Void
@@ -158,8 +158,8 @@ struct SetupView: View {
             HStack(spacing: 14) {
                 Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 52, height: 52)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Set up Hush").font(.title2.bold())
-                    Text("A few permissions so Hush can mute you, turn off your camera and pause videos when you step away.")
+                    Text("Set up Over&Out").font(.title2.bold())
+                    Text("A few permissions so Over&Out can mute you, turn off your camera and pause videos when you step away.")
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -172,10 +172,10 @@ struct SetupView: View {
                     step("Camera", "See whether you're at your desk or holding your phone to your ear.",
                          done: isGranted(model.camera), action: ("Allow", model.allowCamera))
                     Divider()
-                    step("Accessibility", "Press mute and camera buttons in Zoom, Teams and other apps, and the ⏯ key. If Hush is already listed, switch it on.",
+                    step("Accessibility", "Press mute and camera buttons in Zoom, Teams and other apps, and the ⏯ key. If Over&Out is already listed, switch it on.",
                          done: model.accessibility, action: ("Allow", model.allowAccessibility))
                     Divider()
-                    step("Notifications", "Tell you when Hush mutes you or needs something.",
+                    step("Notifications", "Tell you when Over&Out mutes you or needs something.",
                          done: isGranted(model.notifications), action: ("Allow", model.allowNotifications))
                 }
                 .padding(6)
@@ -185,7 +185,7 @@ struct SetupView: View {
                 GroupBox {
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Browsers").font(.headline)
-                        Text("For Google Meet and other meetings in a browser: lets Hush press the meeting's camera and mute buttons, and pause a video playing in the same browser. Hush turns on the browser's “Allow JavaScript from Apple Events” setting for you.")
+                        Text("For Google Meet and other meetings in a browser: lets Over&Out press the meeting's camera and mute buttons, and pause a video playing in the same browser. Over&Out turns on the browser's “Allow JavaScript from Apple Events” setting for you.")
                             .font(.callout)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -199,7 +199,7 @@ struct SetupView: View {
                                 Text("➖")
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(name).font(.headline)
-                                    Text("\(name) doesn't let other apps run JavaScript in its pages, so Hush can't press meeting buttons there. Videos still pause with ⏯ and your mic is still muted system-wide.")
+                                    Text("\(name) doesn't let other apps run JavaScript in its pages, so Over&Out can't press meeting buttons there. Videos still pause with ⏯ and your mic is still muted system-wide.")
                                         .font(.callout).foregroundStyle(.secondary)
                                         .fixedSize(horizontal: false, vertical: true)
                                 }
@@ -290,10 +290,10 @@ struct SetupView: View {
     private func description(_ state: BrowserSetup.State, name: String) -> String {
         switch state {
         case .notRunning: return "Open \(name) to set it up."
-        case .unknown: return "Press Check. If macOS asks whether Hush may control \(name), choose Allow."
+        case .unknown: return "Press Check. If macOS asks whether Over&Out may control \(name), choose Allow."
         case .ready: return "Ready."
-        case .needsJavaScript: return "“Allow JavaScript from Apple Events” is off. Hush can switch it on for you."
-        case .needsAutomation: return "Hush isn't allowed to control \(name). Turn it on under Privacy & Security → Automation → Hush."
+        case .needsJavaScript: return "“Allow JavaScript from Apple Events” is off. Over&Out can switch it on for you."
+        case .needsAutomation: return "Over&Out isn't allowed to control \(name). Turn it on under Privacy & Security → Automation → Over&Out."
         case .noWindow: return "Open a window in \(name), then press Check."
         }
     }

@@ -85,8 +85,8 @@ struct SettingsView: View {
                     HStack {
                         Text("⚠️")
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Finish setting up Hush").font(.headline)
-                            Text("Some permissions are missing, so parts of Hush won't work yet.")
+                            Text("Finish setting up Over&Out").font(.headline)
+                            Text("Some permissions are missing, so parts of Over&Out won't work yet.")
                                 .font(.callout).foregroundStyle(.secondary)
                         }
                         Spacer()
@@ -103,9 +103,9 @@ struct SettingsView: View {
             }
 
             Section("Keyboard shortcuts") {
-                shortcut("⌃⌥⌘H", "Open Hush's menu (even if its icon is hidden)")
-                shortcut("⌃⌥⌘G", "Turn Hush on / off")
-                shortcut("⌃⌥⌘C", "Hush camera on / off")
+                shortcut("⌃⌥⌘H", "Open Over&Out's menu (even if its icon is hidden)")
+                shortcut("⌃⌥⌘G", "Turn Over&Out on / off")
+                shortcut("⌃⌥⌘C", "Over&Out camera on / off")
                 shortcut("⌃⌥⌘M", "Mute / unmute microphone")
                 shortcut("⌃⌥⌘P", "Panic: mute, video off, pause, lower volume")
             }
@@ -116,7 +116,7 @@ struct SettingsView: View {
                     Button("What's New") { showWhatsNew() }
                     Button("Welcome Banner") { showWelcome() }
                     Spacer()
-                    Button("Quit Hush") { NSApp.terminate(nil) }
+                    Button("Quit Over&Out") { NSApp.terminate(nil) }
                 }
             }
         }
@@ -126,7 +126,7 @@ struct SettingsView: View {
     private var presenceTab: some View {
         Form {
             Section {
-                Toggle("Let Hush use the camera to see if I'm here", isOn: $presenceEnabled)
+                Toggle("Let Over&Out use the camera to see if I'm here", isOn: $presenceEnabled)
                     .onChange(of: presenceEnabled) { _ in cameraPausedUntil = 0 }
                 if presenceEnabled {
                     cameraPauseRow
@@ -144,7 +144,7 @@ struct SettingsView: View {
             } header: {
                 Text("Presence")
             } footer: {
-                Text("The camera is analysed on this Mac and nothing is saved. Its green light is on while Hush is watching.")
+                Text("The camera is analysed on this Mac and nothing is saved. Its green light is on while Over&Out is watching.")
             }
 
             Section("When I step away or pick up my phone") {
@@ -177,7 +177,7 @@ struct SettingsView: View {
             } header: {
                 Text("Browsers")
             } footer: {
-                Text("Lets Hush press Google Meet's camera and mute buttons and pause every playing tab, on every desktop. Needs “Allow JavaScript from Apple Events” in each browser; the Setup Assistant can switch it on for you.")
+                Text("Lets Over&Out press Google Meet's camera and mute buttons and pause every playing tab, on every desktop. Needs “Allow JavaScript from Apple Events” in each browser; the Setup Assistant can switch it on for you.")
             }
         }
         .formStyle(.grouped)
@@ -216,7 +216,7 @@ struct SettingsView: View {
                 .resizable()
                 .frame(width: 56, height: 56)
             VStack(alignment: .leading, spacing: 4) {
-                Text("Hush").font(.title2.bold())
+                Text("Over&Out").font(.title2.bold())
                 Text("Mutes, hides and pauses things when you step away, pick up your phone, or a call starts.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
@@ -226,7 +226,7 @@ struct SettingsView: View {
             Toggle("", isOn: $enabled)
                 .toggleStyle(.switch)
                 .labelsHidden()
-                .help(enabled ? "Hush is on" : "Hush is off")
+                .help(enabled ? "Over&Out is on" : "Over&Out is off")
         }
         .padding(.vertical, 4)
     }

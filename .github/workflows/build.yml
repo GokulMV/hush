@@ -14,8 +14,8 @@ jobs:
       - name: Build app bundle
         run: ./scripts/build-app.sh
       - name: Zip
-        run: ditto -c -k --keepParent build/Hush.app build/Hush.zip
+        run: ditto -c -k --keepParent "build/Over&Out.app" build/OverAndOut.zip
       - uses: actions/upload-artifact@v4
         with:
-          name: Hush
-          path: build/Hush.zip
+          name: OverAndOut
+          path: build/OverAndOut.zip

@@ -27,7 +27,7 @@ final class PresenceSensor: NSObject, AVCaptureVideoDataOutputSampleBufferDelega
     var wantsPreviewFrames = false
 
     private let session = AVCaptureSession()
-    private let queue = DispatchQueue(label: "hush.presence")
+    private let queue = DispatchQueue(label: "overandout.presence")
     private var configured = false
     private var askingForAccess = false
     private var lastAnalysis = Date.distantPast
@@ -103,7 +103,7 @@ final class PresenceSensor: NSObject, AVCaptureVideoDataOutputSampleBufferDelega
     private(set) var runningSince = Date.distantPast
 
     /// Started a while ago but no frames lately: the session is stuck (e.g. another app grabbed the
-    /// camera in a way that starves Hush). The engine restarts it and says so in the menu.
+    /// camera in a way that starves Over&Out). The engine restarts it and says so in the menu.
     var isStalled: Bool {
         isRunning && Date().timeIntervalSince(runningSince) > 4 && Date().timeIntervalSince(lastFrameAt) > 4
     }

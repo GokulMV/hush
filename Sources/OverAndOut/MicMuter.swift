@@ -3,10 +3,10 @@ import Foundation
 
 /// System-wide "hard" mute: works in every app (Zoom, Teams, Meet, FaceTime…) because it
 /// silences the microphone itself. Original levels are saved to UserDefaults so they
-/// come back even if Hush crashes while muted.
+/// come back even if Over&Out crashes while muted.
 enum MicMuter {
-    private static let savedKey = "Hush.savedMicState"
-    private static let pendingKey = "Hush.pendingMicRestore"
+    private static let savedKey = "OverAndOut.savedMicState"
+    private static let pendingKey = "OverAndOut.pendingMicRestore"
 
     /// [device UID: ["mute": 0/1] or ["<element>": volume, …]]
     private typealias State = [String: [String: Double]]

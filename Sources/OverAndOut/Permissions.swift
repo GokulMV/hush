@@ -5,7 +5,7 @@ import Carbon
 import ServiceManagement
 import UserNotifications
 
-/// Live status of every permission Hush uses, for the Permissions menu.
+/// Live status of every permission Over&Out uses, for the Permissions menu.
 enum Permissions {
     enum Status {
         case granted, denied, notAsked

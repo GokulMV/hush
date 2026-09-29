@@ -1,6 +1,6 @@
 import Foundation
 
-/// Why Hush is holding something (mic muted, media paused, …).
+/// Why Over&Out is holding something (mic muted, media paused, …).
 enum Reason: String, CaseIterable, Hashable {
     case ring = "phone ringing"
     case call = "call started"
@@ -10,7 +10,7 @@ enum Reason: String, CaseIterable, Hashable {
     case manual = "you muted it"
 }
 
-/// Things Hush can take away and later give back.
+/// Things Over&Out can take away and later give back.
 enum Resource: String, CaseIterable, Hashable {
     case mic, meetingAudio, meetingVideo, media, volume
 }

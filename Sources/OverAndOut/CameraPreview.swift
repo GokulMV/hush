@@ -7,7 +7,7 @@ final class CameraPreviewModel: ObservableObject {
     @Published var analysis: PresenceAnalysis?
 }
 
-/// Shows what Hush's camera sees and what it makes of it: face box (green), detected phones (red),
+/// Shows what Over&Out's camera sees and what it makes of it: face box (green), detected phones (red),
 /// hand points (orange), and the verdict with its reason. For checking and tuning
 /// detection; frames still never leave the Mac and nothing is saved.
 struct CameraPreviewView: View {
@@ -24,7 +24,7 @@ struct CameraPreviewView: View {
                         .overlay(GeometryReader { geometry in overlay(in: geometry.size) })
                         .scaleEffect(x: -1, y: 1) // mirror, like a selfie view
                 } else {
-                    Text("Waiting for the camera…\nIf this stays empty, check that Hush's camera is on and allowed.")
+                    Text("Waiting for the camera…\nIf this stays empty, check that Over&Out's camera is on and allowed.")
                         .multilineTextAlignment(.center)
                         .foregroundStyle(.secondary)
                 }
@@ -52,7 +52,7 @@ struct CameraPreviewView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             case .unavailable:
-                Text("The phone detector couldn't be downloaded (no internet?). Hush tries again automatically in a few minutes.")
+                Text("The phone detector couldn't be downloaded (no internet?). Over&Out tries again automatically in a few minutes.")
                     .font(.caption)
                     .foregroundStyle(.orange)
             }

@@ -3,7 +3,7 @@ import Foundation
 import Vision
 
 /// Finds phones in camera frames with an on-device object detector (Apple's Core ML YOLOv3-Tiny,
-/// COCO class "cell phone"). The model comes bundled when the build could fetch it; otherwise Hush
+/// COCO class "cell phone"). The model comes bundled when the build could fetch it; otherwise Over&Out
 /// downloads it from Apple by itself in the background on first launch (~9 MB, once), compiles it
 /// on this Mac and caches it. Until it's ready, phone detection is simply off.
 final class PhoneDetector: @unchecked Sendable {
@@ -104,7 +104,7 @@ final class PhoneDetector: @unchecked Sendable {
     private static var supportDirectory: URL? {
         guard let base = try? FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask,
                                                       appropriateFor: nil, create: true) else { return nil }
-        let folder = base.appendingPathComponent("Hush", isDirectory: true)
+        let folder = base.appendingPathComponent("OverAndOut", isDirectory: true)
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         return folder
     }

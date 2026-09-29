@@ -2,7 +2,7 @@ import AppKit
 
 /// Menu-bar icons that stay visible on light and dark menu bars (and over any wallpaper tint).
 ///
-/// Normal states use the Hush waveform drawn as a *template* image: macOS colours templates
+/// Normal states use the Over&Out waveform drawn as a *template* image: macOS colours templates
 /// itself (black on light bars, white on dark ones, inverted while the menu is open).
 /// Alert states use coloured symbols with shades picked for the bar's actual appearance.
 enum MenuBarIcon {
@@ -24,7 +24,7 @@ enum MenuBarIcon {
         appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
     }
 
-    /// The Hush waveform (a slash through it when Hush is off), drawn at 2x as a template image.
+    /// The Over&Out waveform (a slash through it when Over&Out is off), drawn at 2x as a template image.
     @MainActor
     static func brand(slashed: Bool) -> NSImage {
         let size = NSSize(width: 20, height: 18)

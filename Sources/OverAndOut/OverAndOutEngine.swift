@@ -3,7 +3,7 @@ import AppKit
 /// The brain: watches calls, the camera and what's playing, and decides what to take
 /// away (mic, the meeting's mute/camera, media, volume) and when to give it back.
 @MainActor
-final class HushEngine {
+final class OverAndOutEngine {
     enum CallPhase: Equatable {
         case idle
         case ringing(since: Date)
@@ -248,12 +248,12 @@ final class HushEngine {
     /// ⌃⌥⌘G: switch all automatic behaviour off/on. The mute and panic shortcuts keep working.
     func toggleEnabled() {
         settings.toggle(Settings.Key.enabled)
-        Notifier.post(settings.enabled ? "Hush is on" : "Hush is off",
+        Notifier.post(settings.enabled ? "Over&Out is on" : "Over&Out is off",
                       settings.enabled ? "Watching for calls and for you stepping away." : "Nothing will be muted or paused automatically.")
         poll()
     }
 
-    /// ⌃⌥⌘C: Hush's camera off/on. Turning it on also ends a timed pause.
+    /// ⌃⌥⌘C: Over&Out's camera off/on. Turning it on also ends a timed pause.
     func toggleCamera() {
         setCamera(on: !settings.cameraActive)
     }
@@ -261,9 +261,9 @@ final class HushEngine {
     func setCamera(on: Bool) {
         settings.setCamera(on: on)
         cameraWasPaused = false
-        Notifier.post(on ? "Hush camera on" : "Hush camera off",
+        Notifier.post(on ? "Over&Out camera on" : "Over&Out camera off",
                       on ? "It watches during calls and videos to see if you step away."
-                         : "Hush won't use the camera until you turn it back on (⌃⌥⌘C).")
+                         : "Over&Out won't use the camera until you turn it back on (⌃⌥⌘C).")
         poll()
     }
 
@@ -271,7 +271,7 @@ final class HushEngine {
         settings.pauseCamera(for: TimeInterval(minutes * 60))
         cameraWasPaused = true
         let until = settings.cameraPausedUntil?.formatted(date: .omitted, time: .shortened) ?? "later"
-        Notifier.post("Hush camera paused until \(until)", "It turns back on by itself. Press ⌃⌥⌘C to turn it on sooner.")
+        Notifier.post("Over&Out camera paused until \(until)", "It turns back on by itself. Press ⌃⌥⌘C to turn it on sooner.")
         poll()
     }
 
@@ -279,7 +279,7 @@ final class HushEngine {
     private func noticeCameraPauseEnding() {
         let pausedNow = settings.presenceEnabled && settings.cameraPausedUntil != nil
         if cameraWasPaused && !pausedNow && settings.cameraActive {
-            Notifier.post("Hush camera is back on", "The pause you set has ended.")
+            Notifier.post("Over&Out camera is back on", "The pause you set has ended.")
         }
         cameraWasPaused = pausedNow
     }
@@ -486,11 +486,11 @@ final class HushEngine {
     /// One notification per browser per launch explaining the one-time setting it needs.
     private func reportBrowserProblem(blocked: [String], notAuthorized: [String]) {
         for browser in blocked where reportedBrowsers.insert(browser).inserted {
-            Notifier.post("Hush couldn't pause videos in \(BrowserMedia.name(browser))", BrowserMedia.howToAllow(browser))
+            Notifier.post("Over&Out couldn't pause videos in \(BrowserMedia.name(browser))", BrowserMedia.howToAllow(browser))
         }
         for browser in notAuthorized where reportedBrowsers.insert(browser).inserted {
-            Notifier.post("Allow Hush to control \(BrowserMedia.name(browser))",
-                          "System Settings → Privacy & Security → Automation → Hush → turn on \(BrowserMedia.name(browser)).")
+            Notifier.post("Allow Over&Out to control \(BrowserMedia.name(browser))",
+                          "System Settings → Privacy & Security → Automation → Over&Out → turn on \(BrowserMedia.name(browser)).")
         }
     }
 
@@ -537,8 +537,8 @@ final class HushEngine {
     private func warnIfAccessibilityMissing() {
         guard !Permissions.accessibilityGranted, !warnedAboutAccessibility else { return }
         warnedAboutAccessibility = true
-        Notifier.post("Hush can't reach your meeting's camera and mute buttons",
-                      "Allow Accessibility for Hush in System Settings. After a rebuild, remove Hush there and add it again.")
+        Notifier.post("Over&Out can't reach your meeting's camera and mute buttons",
+                      "Allow Accessibility for Over&Out in System Settings. After a rebuild, remove Over&Out there and add it again.")
     }
 
     func meetingApps() -> [pid_t] {

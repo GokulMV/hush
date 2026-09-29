@@ -3,7 +3,7 @@ import ApplicationServices
 
 /// Reads the tab bar of Chromium browsers (Chrome, Brave, Edge, Vivaldi, Arc, Opera) through
 /// Accessibility. Their tabs are named with what they're doing, e.g. "Netflix - Audio playing"
-/// or "Meet - xyz - Camera and microphone recording", so Hush can tell a video playing next to a
+/// or "Meet - xyz - Camera and microphone recording", so Over&Out can tell a video playing next to a
 /// meeting without any browser setting. Synchronous and quick (only the browser's own UI).
 enum BrowserTabs {
     enum Audibility { case videoPlaying, nothingPlaying, unknown }

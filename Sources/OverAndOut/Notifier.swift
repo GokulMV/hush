@@ -6,7 +6,7 @@ enum Notifier {
     /// Notifications need a real .app bundle; `swift run` has none.
     private static var available: Bool { Bundle.main.bundleIdentifier != nil }
 
-    /// Shows banners even while the Settings window makes Hush the active app.
+    /// Shows banners even while the Settings window makes Over&Out the active app.
     private static let presenter = Presenter()
 
     static func requestPermission() {
@@ -18,7 +18,7 @@ enum Notifier {
     static func post(_ title: String, _ body: String) {
         guard UserDefaults.standard.bool(forKey: SettingsKey.showNotifications) else { return }
         guard available else {
-            print("[Hush] \(title): \(body)")
+            print("[Over&Out] \(title): \(body)")
             return
         }
         let content = UNMutableNotificationContent()

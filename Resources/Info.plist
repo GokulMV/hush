@@ -3,30 +3,30 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDisplayName</key>
-	<string>Hush</string>
+	<string>Over&amp;Out</string>
 	<key>CFBundleExecutable</key>
-	<string>Hush</string>
+	<string>OverAndOut</string>
 	<key>CFBundleIconFile</key>
 	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.gokulmv.hush</string>
+	<string>com.gokulmv.overandout</string>
 	<key>CFBundleName</key>
-	<string>Hush</string>
+	<string>Over&amp;Out</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
 	<string>1.0.1</string>
 	<key>CFBundleVersion</key>
 	<string>202609290725</string>
-	<key>HushGitHubRepo</key>
+	<key>GitHubRepo</key>
 	<string>GokulMV/hush</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>13.0</string>
 	<key>LSUIElement</key>
 	<true/>
 	<key>NSAppleEventsUsageDescription</key>
-	<string>Hush pauses Spotify and Music when you step away or a call starts, and resumes them when you are back.</string>
+	<string>Over&amp;Out pauses Spotify and Music when you step away or a call starts, and resumes them when you are back.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Hush looks at the camera on this Mac, on-device, to notice when you walk away or hold a phone to your ear. No frames are saved or sent anywhere.</string>
+	<string>Over&amp;Out looks at the camera on this Mac, on-device, to notice when you walk away or hold a phone to your ear. No frames are saved or sent anywhere.</string>
 </dict>
 </plist>

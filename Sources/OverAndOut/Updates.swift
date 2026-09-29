@@ -32,11 +32,11 @@ enum AppInfo {
 
     /// The GitHub repo that publishes releases ("owner/name"), written into Info.plist by the release script.
     static var repo: String {
-        Bundle.main.object(forInfoDictionaryKey: "HushGitHubRepo") as? String ?? "GokulMV/hush"
+        Bundle.main.object(forInfoDictionaryKey: "GitHubRepo") as? String ?? "GokulMV/hush"
     }
 
     static var installedWithHomebrew: Bool {
-        ["/opt/homebrew/Caskroom/hush", "/usr/local/Caskroom/hush"].contains { FileManager.default.fileExists(atPath: $0) }
+        ["/opt/homebrew/Caskroom/over-and-out", "/usr/local/Caskroom/over-and-out"].contains { FileManager.default.fileExists(atPath: $0) }
     }
 
     static var brew: String? {
@@ -44,7 +44,7 @@ enum AppInfo {
     }
 }
 
-/// Checks GitHub Releases for a newer Hush and installs it (through Homebrew when that's how Hush
+/// Checks GitHub Releases for a newer Over&Out and installs it (through Homebrew when that's how Over&Out
 /// was installed, otherwise by opening the download page). Checks once a day by itself.
 @MainActor
 final class UpdateModel: ObservableObject {
@@ -97,7 +97,7 @@ final class UpdateModel: ObservableObject {
         guard let url = URL(string: "https://api.github.com/repos/\(AppInfo.repo)/releases/latest") else { return }
         var request = URLRequest(url: url)
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
-        request.setValue("Hush/\(AppInfo.version)", forHTTPHeaderField: "User-Agent")
+        request.setValue("OverAndOut/\(AppInfo.version)", forHTTPHeaderField: "User-Agent")
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
             let status = (response as? HTTPURLResponse)?.statusCode ?? 0
@@ -123,15 +123,15 @@ final class UpdateModel: ObservableObject {
             state = .available(version: latest.description, notes: json["body"] as? String ?? "", page: page)
             if !userInitiated && defaults.string(forKey: Self.notifiedKey) != latest.description {
                 defaults.set(latest.description, forKey: Self.notifiedKey)
-                Notifier.post("Hush \(latest.description) is available",
-                              "Open the Hush menu → Check for Updates to see what's new and install it.")
+                Notifier.post("Over&Out \(latest.description) is available",
+                              "Open the Over&Out menu → Check for Updates to see what's new and install it.")
             }
         } catch {
             state = .failed(error.localizedDescription)
         }
     }
 
-    /// Homebrew installs update through Homebrew (Hush quits, updates and reopens itself);
+    /// Homebrew installs update through Homebrew (Over&Out quits, updates and reopens itself);
     /// other installs open the release page to download the new version.
     func install() {
         guard case .available(_, _, let page) = state else { return }
@@ -141,15 +141,15 @@ final class UpdateModel: ObservableObject {
         }
         state = .installing
         let log = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library/Logs/Hush-update.log").path
-        // Detached, so it survives Homebrew quitting Hush; reopens Hush when done.
-        let command = "nohup /bin/sh -c '\"\(brew)\" upgrade --cask hush; open -a Hush' > \"\(log)\" 2>&1 &"
+            .appendingPathComponent("Library/Logs/OverAndOut-update.log").path
+        // Detached, so it survives Homebrew quitting Over&Out; reopens Over&Out when done.
+        let command = "nohup /bin/sh -c '\"\(brew)\" upgrade --cask gokulmv/tap/over-and-out; open -b com.gokulmv.overandout' > \"\(log)\" 2>&1 &"
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/bin/sh")
         process.arguments = ["-c", command]
         do {
             try process.run()
-            Notifier.post("Updating Hush…", "Hush will close and reopen by itself in a moment.")
+            Notifier.post("Updating Over&Out…", "Over&Out will close and reopen by itself in a moment.")
         } catch {
             state = .failed("Couldn't start Homebrew: \(error.localizedDescription)")
         }
@@ -183,8 +183,8 @@ struct UpdatesView: View {
                 Text("Updates")
             } footer: {
                 Text(AppInfo.installedWithHomebrew
-                     ? "Installed with Homebrew: updates install through Homebrew and Hush reopens by itself."
-                     : "Updates open the download page. Installing with Homebrew (brew install --cask hush) makes updating one click.")
+                     ? "Installed with Homebrew: updates install through Homebrew and Over&Out reopens by itself."
+                     : "Updates open the download page. Installing with Homebrew (brew install --cask gokulmv/tap/over-and-out) makes updating one click.")
             }
 
             Section { status }
@@ -205,17 +205,17 @@ struct UpdatesView: View {
         case .checking:
             HStack { ProgressView().controlSize(.small); Text("Checking…") }
         case .upToDate:
-            Label("Hush is up to date.", systemImage: "checkmark.circle.fill").foregroundStyle(.green)
+            Label("Over&Out is up to date.", systemImage: "checkmark.circle.fill").foregroundStyle(.green)
         case .noReleases:
             Text("No releases have been published yet.").foregroundStyle(.secondary)
         case .installing:
-            HStack { ProgressView().controlSize(.small); Text("Updating… Hush will reopen by itself.") }
+            HStack { ProgressView().controlSize(.small); Text("Updating… Over&Out will reopen by itself.") }
         case .failed(let reason):
             Label("Couldn't check for updates: \(reason)", systemImage: "exclamationmark.triangle")
                 .foregroundStyle(.orange)
         case .available(let version, let notes, _):
             VStack(alignment: .leading, spacing: 10) {
-                Label("Hush \(version) is available", systemImage: "arrow.down.circle.fill")
+                Label("Over&Out \(version) is available", systemImage: "arrow.down.circle.fill")
                     .font(.headline).foregroundStyle(.blue)
                 if !notes.isEmpty {
                     ScrollView {

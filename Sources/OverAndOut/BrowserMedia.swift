@@ -33,22 +33,22 @@ enum BrowserMedia {
         "app.zoom.us", "webex.com", "app.slack.com/huddle", "discord.com/channels", "whereby.com", "jitsi",
     ]
 
-    private static let queue = DispatchQueue(label: "hush.browser-media") // keeps pause → resume in order
+    private static let queue = DispatchQueue(label: "overandout.browser-media") // keeps pause → resume in order
 
     private static let pauseJS = """
         (function(){var n=0;document.querySelectorAll('video,audio').forEach(function(m){\
-        if(!m.paused&&!m.ended){m.pause();m.setAttribute('data-hush-paused','1');n++;}});return n;})()
+        if(!m.paused&&!m.ended){m.pause();m.setAttribute('data-overandout-paused','1');n++;}});return n;})()
         """
     /// Plays what `pauseAll` paused (the tagged elements), keeping the tag for the check below.
     private static let resumeJS = """
-        (function(){var n=0;document.querySelectorAll('[data-hush-paused]').forEach(function(m){\
+        (function(){var n=0;document.querySelectorAll('[data-overandout-paused]').forEach(function(m){\
         var p=m.play();if(p&&p.catch){p.catch(function(){});}n++;});return n;})()
         """
     /// A moment later: how many are still paused (some players, e.g. Netflix, refuse a scripted
     /// play()), then clear the tags.
     private static let verifyJS = """
-        (function(){var n=0;document.querySelectorAll('[data-hush-paused]').forEach(function(m){\
-        if(m.paused){n++;}m.removeAttribute('data-hush-paused');});return n;})()
+        (function(){var n=0;document.querySelectorAll('[data-overandout-paused]').forEach(function(m){\
+        if(m.paused){n++;}m.removeAttribute('data-overandout-paused');});return n;})()
         """
 
     private static let countJS = """
@@ -56,7 +56,7 @@ enum BrowserMedia {
         if(!m.paused&&!m.ended){n++;}});return n;})()
         """
 
-    /// For "Test Meeting Controls": can Hush pause media in each running browser? Changes nothing.
+    /// For "Test Meeting Controls": can Over&Out pause media in each running browser? Changes nothing.
     static func status(completion: @escaping @Sendable (String) -> Void) {
         guard enabled else {
             completion("Videos are paused with the ⏯ key (no setup needed). Tab-by-tab pausing for a video "
@@ -76,7 +76,7 @@ enum BrowserMedia {
                 case .blocked:
                     return "❌ \(name(browser)): can't pause videos yet. " + howToAllow(browser)
                 case .notAuthorized:
-                    return "❌ \(name(browser)): Automation is off. System Settings → Privacy & Security → Automation → Hush → turn on \(name(browser))."
+                    return "❌ \(name(browser)): Automation is off. System Settings → Privacy & Security → Automation → Over&Out → turn on \(name(browser))."
                 case .failed:
                     return "⚪️ \(name(browser)): no answer (no windows open?)"
                 }
@@ -141,7 +141,7 @@ enum BrowserMedia {
         case .safari?:
             return "In Safari, turn on Settings → Advanced → “Show features for web developers”, then in the menu bar at the top of the screen choose Develop → “Allow JavaScript from Apple Events”."
         case .arc?:
-            return "Arc runs it without a browser setting; if macOS asked whether Hush may control Arc, allow it under Privacy & Security → Automation."
+            return "Arc runs it without a browser setting; if macOS asked whether Over&Out may control Arc, allow it under Privacy & Security → Automation."
         default:
             return "With \(name(bundleID)) in front, use the menu bar at the top of the screen: View → Developer → “Allow JavaScript from Apple Events” (not the browser's settings page)."
         }
@@ -166,7 +166,7 @@ enum BrowserMedia {
         run(bundleID, js: meetingButtonJS(labels: labels, click: click), meetingTabsOnly: true)
     }
 
-    /// Runs "1" in the front tab: answers whether this browser accepts JavaScript from Hush.
+    /// Runs "1" in the front tab: answers whether this browser accepts JavaScript from Over&Out.
     static func probe(_ bundleID: String) -> Outcome {
         probeDetailed(bundleID).outcome
     }

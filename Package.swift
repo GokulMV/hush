@@ -2,10 +2,10 @@
 import PackageDescription
 
 let package = Package(
-    name: "Hush",
+    name: "OverAndOut",
     platforms: [.macOS(.v13)],
     targets: [
-        .executableTarget(name: "Hush", path: "Sources/Hush"),
-        .testTarget(name: "HushTests", dependencies: ["Hush"], path: "Tests/HushTests"),
+        .executableTarget(name: "OverAndOut", path: "Sources/OverAndOut"),
+        .testTarget(name: "OverAndOutTests", dependencies: ["OverAndOut"], path: "Tests/OverAndOutTests"),
     ]
 )

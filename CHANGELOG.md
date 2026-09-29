@@ -3,6 +3,12 @@
 Newest first. Each release needs a section here: `scripts/release.sh` uses it for the GitHub release
 notes, and Hush shows it in "What's New" after an upgrade and in Settings → Updates.
 
+## 1.1.0
+- **Hush is now Over&Out.** Homebrew already had an unrelated app called `hush` (a Safari cookie-banner
+  blocker) that also installed as Hush.app, so `brew install --cask hush` and updates could fetch the wrong
+  app. Install and update with `brew install --cask gokulmv/tap/over-and-out`. Settings start fresh and
+  macOS asks for the permissions once more.
+
 ## 1.0.1
 - **Meetings in a browser tab**: your camera and microphone now come back on when you return, even if
   the meeting tab is in the background. If the browser holds the change back (background tabs are

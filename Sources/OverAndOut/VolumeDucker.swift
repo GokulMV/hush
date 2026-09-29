@@ -2,8 +2,8 @@ import Foundation
 
 /// Lowers the speaker volume while a phone rings, then puts it back.
 enum VolumeDucker {
-    private static let originalKey = "Hush.volumeBeforeDuck"
-    private static let duckedKey = "Hush.volumeDuckedTo"
+    private static let originalKey = "OverAndOut.volumeBeforeDuck"
+    private static let duckedKey = "OverAndOut.volumeDuckedTo"
     private static var defaults: UserDefaults { .standard }
 
     static var isDucked: Bool { defaults.object(forKey: originalKey) != nil }

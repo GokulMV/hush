@@ -16,8 +16,8 @@ final class MeetingControl: @unchecked Sendable {
 
     static let shared = MeetingControl()
 
-    private let queue = DispatchQueue(label: "hush.meeting-control")
-    /// Apps where Hush switched something off and must switch it back on. Only touched on `queue`.
+    private let queue = DispatchQueue(label: "overandout.meeting-control")
+    /// Apps where Over&Out switched something off and must switch it back on. Only touched on `queue`.
     private var switchedOff: [Kind: Set<pid_t>] = [:]
     /// Mirrors `switchedOff` for the menu; read on any thread.
     private let displayLock = NSLock()
@@ -64,7 +64,7 @@ final class MeetingControl: @unchecked Sendable {
         return displayState.contains(kind)
     }
 
-    /// For the "Test Meeting Controls" menu item: what Hush can see in each app, in plain words.
+    /// For the "Test Meeting Controls" menu item: what Over&Out can see in each app, in plain words.
     func diagnose(_ pids: [pid_t], completion: @escaping @Sendable (String) -> Void) {
         queue.async { [self] in
             // Browsers first: they're reached through JavaScript, not Accessibility.
@@ -85,7 +85,7 @@ final class MeetingControl: @unchecked Sendable {
                 case .blocked:
                     lines.append("❌ \(name): " + BrowserMedia.howToAllow(bundleID))
                 case .notAuthorized:
-                    lines.append("❌ \(name): Automation is off. System Settings → Privacy & Security → Automation → Hush → turn on \(name).")
+                    lines.append("❌ \(name): Automation is off. System Settings → Privacy & Security → Automation → Over&Out → turn on \(name).")
                 default:
                     break
                 }
@@ -94,10 +94,10 @@ final class MeetingControl: @unchecked Sendable {
 
             guard AXIsProcessTrusted() else {
                 lines.append("""
-                    ❌ Hush isn't allowed to use Accessibility, so it can't press Meet's buttons.
+                    ❌ Over&Out isn't allowed to use Accessibility, so it can't press Meet's buttons.
 
-                    Open System Settings → Privacy & Security → Accessibility, select Hush, press “–” to \
-                    remove it, then press “+” and add /Applications/Hush.app again. (Each rebuild changes the \
+                    Open System Settings → Privacy & Security → Accessibility, select Over&Out, press “–” to \
+                    remove it, then press “+” and add /Applications/Over&Out.app again. (Each rebuild changes the \
                     app's signature, so an old ✓ there no longer counts.)
                     """)
                 completion(lines.joined(separator: "\n\n"))
@@ -188,7 +188,7 @@ final class MeetingControl: @unchecked Sendable {
             _ = BrowserMedia.meetingButton(in: bundleID, labels: turnOn, click: true)
         }
         Notifier.post("Your meeting is in front again",
-                      "Hush brought the meeting tab forward so it could turn your \(kind == .video ? "camera" : "microphone") back on.")
+                      "Over&Out brought the meeting tab forward so it could turn your \(kind == .video ? "camera" : "microphone") back on.")
     }
 
     /// Button labels (lower-cased) that perform the wanted change. Real labels often carry a

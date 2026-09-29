@@ -1,7 +1,7 @@
 import AppKit
 
 @main
-enum HushApp {
+enum OverAndOutApp {
     @MainActor
     static func main() {
         let app = NSApplication.shared

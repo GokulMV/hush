@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Builds Hush.app into ./build (ad-hoc signed, runs locally without a developer account).
+# Builds "Over&Out.app" into ./build (ad-hoc signed, runs locally without a developer account).
+# The app's file name has an "&", so always quote it in shells: "build/Over&Out.app".
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -12,22 +13,21 @@ else
     BIN_DIR="$(swift build -c release --show-bin-path)"
 fi
 
-APP="build/Hush.app"
+APP="build/Over&Out.app"
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-cp "$BIN_DIR/Hush" "$APP/Contents/MacOS/Hush"
+cp "$BIN_DIR/OverAndOut" "$APP/Contents/MacOS/OverAndOut"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 cp CHANGELOG.md "$APP/Contents/Resources/CHANGELOG.md"
 
-# On-device phone detector (downloaded once; phone detection is off without it).
+# On-device phone detector (downloaded once; the app also fetches it by itself if missing).
 [ -s Resources/ObjectDetector.mlmodel ] || ./scripts/fetch-model.sh || true
 if [ -s Resources/ObjectDetector.mlmodel ]; then
     cp Resources/ObjectDetector.mlmodel "$APP/Contents/Resources/ObjectDetector.mlmodel"
 else
-    echo "⚠️  Building without the phone detector: phone-at-ear detection will be off."
+    echo "⚠️  Building without the phone detector: the app will download it on first launch."
 fi
 codesign --force --sign - "$APP"
 
 echo "Built $APP"
-echo "Install with:  cp -R $APP /Applications/ && open /Applications/Hush.app"

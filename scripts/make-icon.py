@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Draws the Hush app icon and writes Resources/AppIcon.icns (needs Pillow: pip install pillow).
+"""Draws the Over&Out app icon and writes Resources/AppIcon.icns (needs Pillow: pip install pillow).
 
 Design: an indigo→teal rounded square (macOS icon grid) with a white sound waveform
 cut by a diagonal slash: "sound, silenced".

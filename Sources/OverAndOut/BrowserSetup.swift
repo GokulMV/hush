@@ -1,8 +1,8 @@
 import AppKit
 import ApplicationServices
 
-/// Helps set up browsers for Hush from the Setup Assistant: checks whether a browser runs
-/// JavaScript sent by Hush, and can switch on "Allow JavaScript from Apple Events" by clicking
+/// Helps set up browsers for Over&Out from the Setup Assistant: checks whether a browser runs
+/// JavaScript sent by Over&Out, and can switch on "Allow JavaScript from Apple Events" by clicking
 /// that item in the browser's own menu (View → Developer, or Safari's Develop menu).
 /// Everything here is synchronous; call it off the main thread.
 enum BrowserSetup {
@@ -18,7 +18,7 @@ enum BrowserSetup {
         }
     }
 
-    /// Installed browsers that can't run JavaScript for Hush (listed in Setup so nobody wonders).
+    /// Installed browsers that can't run JavaScript for Over&Out (listed in Setup so nobody wonders).
     static var installedUnsupported: [String] {
         BrowserMedia.unsupported.keys.sorted().compactMap { id in
             NSWorkspace.shared.urlForApplication(withBundleIdentifier: id) == nil ? nil : BrowserMedia.unsupported[id]
@@ -30,7 +30,7 @@ enum BrowserSetup {
     }
 
     /// Runs a harmless script ("1") in the front tab. The first time, macOS asks
-    /// "Hush wants to control <browser>".
+    /// "Over&Out wants to control <browser>".
     static func check(_ id: String) -> State {
         checkDetailed(id).state
     }
@@ -65,11 +65,11 @@ enum BrowserSetup {
         func hint(_ id: String) -> String {
             let manual = BrowserMedia.howToAllow(id)
             switch self {
-            case .noAccessibility: return "Hush needs Accessibility to do this. " + manual
+            case .noAccessibility: return "Over&Out needs Accessibility to do this. " + manual
             case .notFound: return "Couldn't find the setting in the menu. " + manual
             case .disabled: return "The menu item is greyed out (click a \(BrowserMedia.name(id)) window first). " + manual
             case .pressFailed: return "The browser didn't accept the click. " + manual
-            case .pressed, .alreadyOn: return "Hush ticked the setting, but the browser still refuses."
+            case .pressed, .alreadyOn: return "Over&Out ticked the setting, but the browser still refuses."
             }
         }
     }
