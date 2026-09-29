@@ -93,17 +93,28 @@ enum Permissions {
         var answers: [String: Status] = [:]
         let group = DispatchGroup()
         for app in apps {
+            // One question per app at a time: if macOS still hasn't answered the last one, don't
+            // pile up another thread behind it (its answer is picked up from `lastAnswer` later).
+            observedLock.lock()
+            let busy = !pendingChecks.insert(app.bundleID).inserted
+            observedLock.unlock()
+            if busy { continue }
             group.enter()
             Thread.detachNewThread {
                 let status = automationStatus(app.bundleID)
                 lock.lock(); answers[app.bundleID] = status; lock.unlock()
+                observedLock.lock()
+                pendingChecks.remove(app.bundleID)
+                lastAnswer[app.bundleID] = status
+                observedLock.unlock()
                 group.leave()
             }
         }
         _ = group.wait(timeout: .now() + 3)
         lock.lock(); let answered = answers; lock.unlock()
+        observedLock.lock(); let previous = lastAnswer; observedLock.unlock()
         return apps.map { app in
-            var status = answered[app.bundleID] ?? .unknown("no answer from macOS")
+            var status = answered[app.bundleID] ?? previous[app.bundleID] ?? .unknown("no answer from macOS")
             // "Unknown"/"open the app to check": what actually happened last time is more useful.
             if case .unknown = status, let seen = observed(app.bundleID) { status = seen }
             return automationRow(app, status)
@@ -113,6 +124,8 @@ enum Permissions {
     // What really happened the last time Over&Out controlled an app (a script ran, or macOS refused).
     private static let observedLock = NSLock()
     private static var observedStatus: [String: Status] = [:]
+    private static var pendingChecks: Set<String> = []
+    private static var lastAnswer: [String: Status] = [:]
 
     /// Called by the media and browser controllers after talking to an app.
     static func recordAutomation(_ bundleID: String, allowed: Bool) {
