@@ -15,9 +15,9 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.1.13</string>
+	<string>1.1.14</string>
 	<key>CFBundleVersion</key>
-	<string>202609291615</string>
+	<string>202609291835</string>
 	<key>GitHubRepo</key>
 	<string>GokulMV/hush</string>
 	<key>LSMinimumSystemVersion</key>
