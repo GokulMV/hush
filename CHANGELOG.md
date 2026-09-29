@@ -4,17 +4,21 @@ Newest first. Each release needs a section here: `scripts/release.sh` uses it fo
 notes, and Hush shows it in "What's New" after an upgrade and in Settings → Updates.
 
 ## 1.1.12
-- **One way to pause everything.** Over&Out now asks macOS what is playing (its “Now Playing”, the same
-  thing the media keys and Control Centre use) and sends it a real Pause, then Play when you're back.
-  That covers Spotify, Music, YouTube, Netflix and any other app or browser tab the same way, needs no
-  per-app setup, and can never start something by accident (the old ⏯ key was a toggle). Spotify and
-  Music are still paused directly too, and browser tab control still pauses several tabs at once.
-- **The camera turns off after a meeting.** A call now means an app you can see in the Dock (or a calling
-  service) using the microphone; background helpers that keep the mic open no longer count, which
-  could keep a “call” going and the camera on after the meeting ended.
-- The camera only watches for playing media when “pause media when I step away” is on, and only while
-  macOS says something is actually playing (not just an app holding the speakers open).
+- **Pausing gets a safety net.** Everything that paused media before still does, the same way. On top
+  of that, Over&Out now asks macOS what is playing (its “Now Playing”, as used by the media keys and
+  Control Centre) and, if something is still playing that the usual steps didn't handle, sends it a real
+  Pause (and Play when you're back). It never presses ⏯ for that, so it can't start anything by accident.
+- **The camera turns off after a meeting.** Background-only helpers that keep the microphone open
+  (dictation tools, noise filters and other menu-bar apps without a Dock icon) no longer count as a call;
+  they could keep a “call” going, and the camera on, after the meeting ended. Meeting apps and browsers
+  count exactly as before.
+- The camera only watches for playing media when “pause media when I step away” is on.
 - The menu shows what's playing (“🎵 Playing: …”).
+- **Better phone detection on Apple Silicon Macs**: the full YOLOv3 detector from Apple's Core ML gallery
+  replaces the small “Tiny” one, and is much better at spotting a phone that's small, tilted, partly
+  covered by your hand, or held edge-on at your ear. It runs on the Neural Engine. Intel Macs keep the
+  small detector, which also stays as a fallback everywhere. The rules for what counts as a phone call
+  (a phone in your hand or at your ear, never just a hand at your ear) are unchanged.
 - **Automation rows show ✅ when the permission is on**, even when macOS doesn't answer Over&Out's
   question about it (as happened with Spotify): Over&Out then asks the open app itself for its version,
   which only works when the permission is on. Apps that aren't open still say so.

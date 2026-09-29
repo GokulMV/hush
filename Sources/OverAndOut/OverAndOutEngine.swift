@@ -266,12 +266,10 @@ final class OverAndOutEngine {
         // quiet hold the speakers open without playing anything you'd watch.
         if !settings.awayResources.contains(.media) {
             // Not pausing media when you step away: nothing playing needs watching.
-        } else if let nowPlaying = NowPlaying.latest {
-            // macOS's Now Playing is the one reliable answer for every app and browser tab.
-            if nowPlaying.pausable {
-                let name = nowPlaying.bundleID.map(Self.displayName) ?? nowPlaying.title ?? "Something"
-                reasons.append(.media(name))
-            }
+        } else if let nowPlaying = NowPlaying.latest, nowPlaying.pausable {
+            // macOS's Now Playing: the most reliable answer, for every app and browser tab.
+            let name = nowPlaying.bundleID.map(Self.displayName) ?? nowPlaying.title ?? "Something"
+            reasons.append(.media(name))
         } else if let playing = outputSince.keys.sorted().first(where: {
             !$0.hasPrefix("pid:") && !quietOutputs.contains($0)
                 && (AppClassifier.isMediaSource($0) || AppClassifier.scriptablePlayers.contains($0))
@@ -412,7 +410,7 @@ final class OverAndOutEngine {
     /// Only acts on a confirmed-playing video (tab bar, or tab-level pausing): a blind ⏯ here could
     /// resume something that's still paused.
     private func repauseIfPlaying(for reason: Reason) {
-        let playing = NowPlaying.latest.map(\.pausable) ?? outputSince.contains { id, _ in
+        let playing = outputSince.contains { id, _ in
             guard AppClassifier.isMediaSource(id), let app = Self.runningApp(for: id) else { return false }
             return BrowserTabs.audibility(of: app) == .videoPlaying
         }
@@ -604,10 +602,14 @@ final class OverAndOutEngine {
     /// The app behind an audio process: "com.brave.Browser.helper" → Brave, WebKit → Safari.
     /// Helper processes are running applications too, but windowless and background-only
     /// (activation policy .prohibited), so keep going until we reach a regular app with windows.
-    /// Calling services by name, and otherwise only apps with a Dock icon (or their helpers).
+    /// Everything that counted as a call before still does, except apps macOS says are
+    /// background-only (menu-bar helpers such as dictation tools or noise filters, with no Dock icon
+    /// and no Dock app they belong to). Anything that can't be identified still counts, as before.
     nonisolated static func isForegroundCaller(_ id: String) -> Bool {
         if id == AppClassifier.unknownMicUser || AppClassifier.isCallApp(id) { return true }
-        return runningApp(for: id)?.activationPolicy == .regular
+        if runningApp(for: id) != nil { return true } // a Dock app, or a helper of one
+        let apps = NSRunningApplication.runningApplications(withBundleIdentifier: id)
+        return apps.isEmpty || apps.contains { $0.activationPolicy == .regular }
     }
 
     nonisolated static func runningApp(for bundleID: String) -> NSRunningApplication? {

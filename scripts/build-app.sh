@@ -21,13 +21,16 @@ cp Resources/Info.plist "$APP/Contents/Info.plist"
 cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 cp CHANGELOG.md "$APP/Contents/Resources/CHANGELOG.md"
 
-# On-device phone detector (downloaded once; the app also fetches it by itself if missing).
-[ -s Resources/ObjectDetector.mlmodel ] || ./scripts/fetch-model.sh || true
-if [ -s Resources/ObjectDetector.mlmodel ]; then
-    cp Resources/ObjectDetector.mlmodel "$APP/Contents/Resources/ObjectDetector.mlmodel"
-else
-    echo "⚠️  Building without the phone detector: the app will download it on first launch."
-fi
+# On-device phone detectors (downloaded once; the app also fetches any missing one by itself).
+{ [ -s Resources/ObjectDetector.mlmodel ] && [ -s Resources/PhoneDetectorLarge.mlmodel ]; } \
+    || ./scripts/fetch-model.sh || true
+for model in ObjectDetector PhoneDetectorLarge; do
+    if [ -s "Resources/$model.mlmodel" ]; then
+        cp "Resources/$model.mlmodel" "$APP/Contents/Resources/$model.mlmodel"
+    else
+        echo "⚠️  Building without $model: the app will download it on first launch."
+    fi
+done
 # Sign with the same certificate every time (scripts/setup-signing.sh), so macOS keeps the app's
 # permissions across updates. Without it: ad-hoc signature, and permissions are asked again.
 SIGN_ID="Over&Out Self-Signed"

@@ -2,10 +2,14 @@ import CoreML
 import Foundation
 import Vision
 
-/// Finds phones in camera frames with an on-device object detector (Apple's Core ML YOLOv3-Tiny,
-/// COCO class "cell phone"). The model comes bundled when the build could fetch it; otherwise Over&Out
-/// downloads it from Apple by itself in the background on first launch (~9 MB, once), compiles it
-/// on this Mac and caches it. Until it's ready, phone detection is simply off.
+/// Finds phones in camera frames with an on-device object detector from Apple's Core ML model gallery
+/// (COCO class "cell phone"):
+/// - Apple Silicon: full YOLOv3 (62 MB, 8-bit). Far better than the Tiny model at small, tilted or
+///   partly covered phones, and quick on the Neural Engine.
+/// - Intel Macs, or until the full model is there: YOLOv3-Tiny (9 MB).
+/// Models come bundled when the build could fetch them; otherwise Over&Out downloads them from Apple
+/// by itself in the background (once), compiles them on this Mac and caches them. Tiny is used in
+/// the meantime, and until any model is ready phone detection is simply off.
 final class PhoneDetector: @unchecked Sendable {
     static let shared = PhoneDetector()
 
@@ -14,15 +18,39 @@ final class PhoneDetector: @unchecked Sendable {
     /// Detections below this confidence are ignored.
     static let minimumConfidence: Float = 0.3
     private static let phoneLabels: Set<String> = ["cell phone", "cellphone", "mobile phone", "cell_phone"]
-    private static let downloadURLs = [
+    /// The detectors, best first. `name` is the file name in the app bundle / Application Support.
+    struct Variant: Equatable {
+        let name: String
+        let urls: [URL]
+        let minimumSize: Int
+    }
+
+    static let large = Variant(name: "PhoneDetectorLarge", urls: [
+        "https://ml-assets.apple.com/coreml/models/Image/ObjectDetection/YOLOv3/YOLOv3Int8LUT.mlmodel",
+        "https://ml-assets.apple.com/coreml/models/Image/ObjectDetection/YOLOv3/YOLOv3FP16.mlmodel",
+    ].compactMap(URL.init(string:)), minimumSize: 30_000_000)
+
+    static let tiny = Variant(name: "ObjectDetector", urls: [
         "https://ml-assets.apple.com/coreml/models/Image/ObjectDetection/YOLOv3Tiny/YOLOv3TinyInt8LUT.mlmodel",
         "https://ml-assets.apple.com/coreml/models/Image/ObjectDetection/YOLOv3Tiny/YOLOv3TinyFP16.mlmodel",
         "https://ml-assets.apple.com/coreml/models/Image/ObjectDetection/YOLOv3Tiny/YOLOv3Tiny.mlmodel",
-    ].compactMap(URL.init(string:))
+    ].compactMap(URL.init(string:)), minimumSize: 1_000_000)
+
+    /// The best detector this Mac should use (the full model needs the Neural Engine to keep up).
+    static var preferred: Variant {
+        #if arch(arm64)
+        return large
+        #else
+        return tiny
+        #endif
+    }
+
     private static let retryAfter: TimeInterval = 10 * 60
 
     private let lock = NSLock()
     private var model: VNCoreMLModel?
+    /// Which detector `model` is (Camera Preview shows it).
+    private(set) var loadedVariant: Variant?
     private var loadAttempted = false
     private var downloading = false
     private var lastDownloadFailure: Date?
@@ -72,33 +100,47 @@ final class PhoneDetector: @unchecked Sendable {
 
     private func loadIfNeeded() {
         lock.lock()
-        let needsLoad = model == nil && !loadAttempted
+        let needsLoad = !loadAttempted
         loadAttempted = true
+        let current = loadedVariant
         lock.unlock()
         guard needsLoad else {
             downloadIfNeeded()
             return
         }
-        guard let source = Self.bundledModel ?? Self.downloadedModel else {
-            downloadIfNeeded()
-            return
+        // The best one that's here; a weaker one only until the preferred one has been fetched.
+        for variant in [Self.preferred, Self.tiny] {
+            if let current, current == variant || current == Self.preferred { break }
+            guard let source = Self.localModel(variant) else { continue }
+            guard let loaded = try? load(source, as: variant) else {
+                // A damaged download: remove it (fetched again later) and keep using what works.
+                if source.path.hasPrefix(Self.supportDirectory?.path ?? "/nonexistent") {
+                    try? FileManager.default.removeItem(at: source)
+                }
+                lock.lock(); lastDownloadFailure = Date(); lock.unlock()
+                continue
+            }
+            lock.lock()
+            model = loaded
+            loadedVariant = variant
+            lock.unlock()
+            break
         }
-        let loaded = try? load(source)
-        lock.lock()
-        model = loaded
-        lock.unlock()
-        if loaded == nil { downloadIfNeeded() }
+        downloadIfNeeded()
     }
 
-    private func load(_ source: URL) throws -> VNCoreMLModel {
-        let compiled = try compiledURL(for: source)
+    private func load(_ source: URL, as variant: Variant) throws -> VNCoreMLModel {
+        let compiled = try compiledURL(for: source, name: variant.name)
         let configuration = MLModelConfiguration()
         configuration.computeUnits = .all // Neural Engine where available: fast and cool
         return try VNCoreMLModel(for: MLModel(contentsOf: compiled, configuration: configuration))
     }
 
-    private static var bundledModel: URL? {
-        Bundle.main.url(forResource: "ObjectDetector", withExtension: "mlmodel")
+    private static func localModel(_ variant: Variant) -> URL? {
+        if let bundled = Bundle.main.url(forResource: variant.name, withExtension: "mlmodel") { return bundled }
+        guard let url = supportDirectory?.appendingPathComponent(variant.name + ".mlmodel"),
+              FileManager.default.fileExists(atPath: url.path) else { return nil }
+        return url
     }
 
     private static var supportDirectory: URL? {
@@ -109,27 +151,32 @@ final class PhoneDetector: @unchecked Sendable {
         return folder
     }
 
-    private static var downloadedModel: URL? {
-        guard let url = supportDirectory?.appendingPathComponent("ObjectDetector.mlmodel"),
-              FileManager.default.fileExists(atPath: url.path) else { return nil }
-        return url
-    }
-
     // MARK: Downloading (automatic, in the background)
 
+    /// Fetches the preferred detector if it isn't here yet (and Tiny first when there's nothing
+    /// at all, so phone detection starts working within seconds rather than after 62 MB).
     private func downloadIfNeeded() {
         lock.lock()
         let recentlyFailed = lastDownloadFailure.map { Date().timeIntervalSince($0) < Self.retryAfter } ?? false
-        guard model == nil, !downloading, !recentlyFailed, Self.bundledModel == nil else {
+        let haveAny = model != nil
+        guard loadedVariant != Self.preferred, !downloading, !recentlyFailed else {
+            lock.unlock()
+            return
+        }
+        let wanted: Variant
+        if Self.localModel(Self.preferred) == nil {
+            wanted = (!haveAny && Self.localModel(Self.tiny) == nil) ? Self.tiny : Self.preferred
+        } else {
+            loadAttempted = false // it's here, just not loaded yet: the next frame loads it
             lock.unlock()
             return
         }
         downloading = true
         lock.unlock()
-        tryDownload(Self.downloadURLs)
+        tryDownload(wanted, wanted.urls)
     }
 
-    private func tryDownload(_ remaining: [URL]) {
+    private func tryDownload(_ variant: Variant, _ remaining: [URL]) {
         guard let url = remaining.first, let folder = Self.supportDirectory else {
             finishDownload(success: false)
             return
@@ -137,17 +184,17 @@ final class PhoneDetector: @unchecked Sendable {
         URLSession.shared.downloadTask(with: url) { file, response, _ in
             let ok = (response as? HTTPURLResponse)?.statusCode == 200
             let size = (file.flatMap { try? FileManager.default.attributesOfItem(atPath: $0.path)[.size] as? Int }) ?? 0
-            guard ok, let file, size > 1_000_000 else {
-                self.tryDownload(Array(remaining.dropFirst()))
+            guard ok, let file, size > variant.minimumSize else {
+                self.tryDownload(variant, Array(remaining.dropFirst()))
                 return
             }
-            let destination = folder.appendingPathComponent("ObjectDetector.mlmodel")
+            let destination = folder.appendingPathComponent(variant.name + ".mlmodel")
             try? FileManager.default.removeItem(at: destination)
             do {
                 try FileManager.default.moveItem(at: file, to: destination)
                 self.finishDownload(success: true)
             } catch {
-                self.tryDownload(Array(remaining.dropFirst()))
+                self.tryDownload(variant, Array(remaining.dropFirst()))
             }
         }.resume()
     }
@@ -156,15 +203,15 @@ final class PhoneDetector: @unchecked Sendable {
         lock.lock()
         downloading = false
         lastDownloadFailure = success ? nil : Date()
-        loadAttempted = !success // after a download, load on the next frame (or now, below)
+        if success { loadAttempted = false } // pick up the new model (and fetch the next one if needed)
         lock.unlock()
         if success { loadIfNeeded() }
     }
 
     /// Compiles the .mlmodel on first use and keeps the result in Application Support.
-    private func compiledURL(for source: URL) throws -> URL {
+    private func compiledURL(for source: URL, name: String) throws -> URL {
         guard let folder = Self.supportDirectory else { throw CocoaError(.fileNoSuchFile) }
-        let cached = folder.appendingPathComponent("ObjectDetector.mlmodelc", isDirectory: true)
+        let cached = folder.appendingPathComponent(name + ".mlmodelc", isDirectory: true)
         let sourceDate = (try? source.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate
         let cachedDate = (try? cached.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate
         if FileManager.default.fileExists(atPath: cached.path), let sourceDate, let cachedDate, cachedDate >= sourceDate {
