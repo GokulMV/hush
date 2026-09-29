@@ -10,7 +10,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     private var lastIcon = ""
     private var appearanceObservation: NSKeyValueObservation?
     private var settingsWindow: NSWindow?
-    private var settingsPanel: DropDownPanel?
     private var previewWindow: NSWindow?
     private var setupWindow: NSWindow?
     private let previewModel = CameraPreviewModel()
@@ -321,38 +320,40 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
 
     // MARK: Settings window
 
-    /// Settings drops down from the menu-bar icon, like other menu-bar apps: no window buttons,
-    /// and it closes when you click anywhere else. If the icon can't be seen (hidden behind the
-    /// notch or by a menu-bar manager), it opens as a regular window instead.
+    /// Settings: a regular window in the middle of the screen, with the page icons in its toolbar
+    /// (the window title shows the page's name), like most Mac apps' settings.
     @objc private func openSettings() {
-        // Wait for the menu to finish closing, or the panel would close with it.
-        DispatchQueue.main.async { [weak self] in self?.showSettingsPanel() }
+        // Wait for the menu to finish closing before bringing the window forward.
+        DispatchQueue.main.async { [weak self] in self?.present(self?.makeSettingsWindow()) }
     }
 
-    private lazy var settingsView = SettingsView(showWelcome: { [weak self] in self?.showWelcome() },
-                                                 showSetup: { [weak self] in self?.openSetup() },
-                                                 setupNeeded: { AppDelegate.setupNeeded },
-                                                 showWhatsNew: { [weak self] in self?.showWhatsNew(since: nil) },
-                                                 updates: updates)
+    private var settingsTabs: NSTabViewController?
 
-    private func showSettingsPanel() {
-        if let button = statusItem.button, menuBarIconVisible {
-            settingsWindow?.close()
-            let panel = settingsPanel ?? DropDownPanel(width: 560, preferredHeight: 640, content: settingsView)
-            settingsPanel = panel
-            if panel.isVisible { panel.makeKeyAndOrderFront(nil) } else { panel.show(below: button) }
-            return
+    private func makeSettingsWindow() -> NSWindow {
+        if let settingsWindow { return settingsWindow }
+        let tabs = NSTabViewController()
+        tabs.tabStyle = .toolbar
+        tabs.transitionOptions = [.allowUserInteraction] // no cross-fade: switching is instant
+        for page in SettingsTab.allCases {
+            let view = SettingsView(page: page,
+                                    showWelcome: { [weak self] in self?.showWelcome() },
+                                    showSetup: { [weak self] in self?.openSetup() },
+                                    setupNeeded: { AppDelegate.setupNeeded },
+                                    showWhatsNew: { [weak self] in self?.showWhatsNew(since: nil) },
+                                    updates: updates)
+            let item = NSTabViewItem(viewController: NSHostingController(rootView: view))
+            item.label = page.title
+            item.image = NSImage(systemSymbolName: page.symbol, accessibilityDescription: page.title)
+            tabs.addTabViewItem(item)
         }
-        settingsPanel?.close()
-        if settingsWindow == nil {
-            let window = NSWindow(contentViewController: NSHostingController(rootView: settingsView))
-            window.title = "Over&Out Settings"
-            window.styleMask = [.titled, .closable]
-            window.isReleasedWhenClosed = false
-            window.center()
-            settingsWindow = window
-        }
-        present(settingsWindow)
+        let window = NSWindow(contentViewController: tabs)
+        window.styleMask = [.titled, .closable, .miniaturizable]
+        window.toolbarStyle = .preference
+        window.isReleasedWhenClosed = false
+        window.center()
+        settingsTabs = tabs
+        settingsWindow = window
+        return window
     }
 
     // MARK: Updates, What's New, About
@@ -366,8 +367,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     @objc private func openAbout() { showSettings(tab: .about) }
 
     private func showSettings(tab: SettingsTab) {
-        openSettings()
-        updates.tabRequest = tab
+        let window = makeSettingsWindow()
+        settingsTabs?.selectedTabViewItemIndex = SettingsTab.allCases.firstIndex(of: tab) ?? 0
+        DispatchQueue.main.async { [weak self] in self?.present(window) }
     }
 
     /// The version that ran before this one, when this launch is an upgrade (What's New shows once).
@@ -399,7 +401,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     /// instead of staying behind on the one where they were opened.
     private func present(_ window: NSWindow?) {
         guard let window else { return }
-        settingsPanel?.close() // it floats above windows: get it out of the way of the one opening
         if window.isVisible && !window.isOnActiveSpace {
             window.orderOut(nil) // re-show here rather than switching you back to its desktop
         }

@@ -56,8 +56,6 @@ final class UpdateModel: ObservableObject {
 
     @Published var state: State = .idle
     @Published private(set) var lastChecked: Date?
-    /// Set to switch the Settings window to a tab (e.g. from "Check for Updates…").
-    @Published var tabRequest: SettingsTab?
 
     private var timer: Timer?
     private let defaults = UserDefaults.standard

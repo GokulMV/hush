@@ -28,39 +28,10 @@ enum SettingsTab: Hashable, CaseIterable {
     }
 }
 
-/// Icon-over-label tabs, like System Settings' toolbar; fits the drop-down panel better than
-/// a TabView, whose segmented tabs look out of place there.
-struct SettingsTabBar: View {
-    @Binding var selection: SettingsTab
-
-    var body: some View {
-        HStack(spacing: 2) {
-            ForEach(SettingsTab.allCases, id: \.self) { tab in
-                Button { selection = tab } label: {
-                    VStack(spacing: 3) {
-                        Image(systemName: tab.symbol).font(.system(size: 17))
-                            .frame(height: 20)
-                        Text(tab.title).font(.caption).lineLimit(1)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 6)
-                    .foregroundStyle(selection == tab ? Color.accentColor : Color.secondary)
-                    .background(RoundedRectangle(cornerRadius: 7)
-                        .fill(selection == tab ? Color.primary.opacity(0.08) : Color.clear))
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .help(tab.title)
-            }
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
-    }
-}
-
-/// The Settings window. Every toggle writes straight to UserDefaults; the engine
+/// One page of the Settings window (the window's toolbar switches pages). Every toggle writes straight to UserDefaults; the engine
 /// reads them on its next tick (twice a second), so changes apply immediately.
 struct SettingsView: View {
+    let page: SettingsTab
     var showWelcome: @MainActor () -> Void = {}
     var showSetup: @MainActor () -> Void = {}
     var setupNeeded: @MainActor () -> Bool = { false }
@@ -88,42 +59,26 @@ struct SettingsView: View {
     @State private var permissions: [Permissions.Row] = []
     @State private var now = Date()
     @State private var needsSetup = false
-    @State private var tab: SettingsTab = .general
     private let refresh = Timer.publish(every: 2, on: .main, in: .common).autoconnect()
 
     var body: some View {
-        VStack(spacing: 0) {
-            SettingsTabBar(selection: $tab)
-            Divider()
-            Group {
-                switch tab {
-                case .general: generalTab
-                case .presence: presenceTab
-                case .calls: callsTab
-                case .permissions: permissionsTab
-                case .updates: UpdatesView(model: updates)
-                case .about: AboutView(showWhatsNew: showWhatsNew)
-                }
+        Group {
+            switch page {
+            case .general: generalTab
+            case .presence: presenceTab
+            case .calls: callsTab
+            case .permissions: permissionsTab
+            case .updates: UpdatesView(model: updates)
+            case .about: AboutView(showWhatsNew: showWhatsNew)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        // Fixed width; the height follows the panel, which fits it to the screen.
-        .frame(width: 560)
-        .frame(minHeight: 360, idealHeight: 620, maxHeight: .infinity)
-        .background(Color(nsColor: .windowBackgroundColor))
+        .frame(width: 560, height: 580)
         .onAppear {
             needsSetup = setupNeeded()
-            if tab == .permissions { loadPermissions() }
-        }
-        .onChange(of: tab) { newTab in
-            if newTab == .permissions { loadPermissions() }
-        }
-        .onReceive(updates.$tabRequest.compactMap { $0 }) { requested in
-            tab = requested
-            updates.tabRequest = nil
+            if page == .permissions { loadPermissions() }
         }
         .onReceive(refresh) { _ in
-            if tab == .permissions { loadPermissions() }
+            if page == .permissions { loadPermissions() }
             now = Date()
             needsSetup = setupNeeded()
             openAtLogin = SMAppService.mainApp.status == .enabled

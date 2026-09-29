@@ -4,8 +4,9 @@ Newest first. Each release needs a section here: `scripts/release.sh` uses it fo
 notes, and Hush shows it in "What's New" after an upgrade and in Settings → Updates.
 
 ## 1.1.7
-- **Settings stays open until you click outside it or press Esc.** It could vanish on its own (for
-  example when moving the pointer away) whenever another app or a notification briefly took focus.
+- **Settings is a regular window again, in the middle of the screen**, with close and minimise buttons
+  and the page icons (General, Presence, Calls & Media, Permissions, Updates, About) in its toolbar,
+  like most Mac apps. It stays open until you close it.
 
 ## 1.1.6
 - **One thing at a time after an update or first launch.** If something needs permission, only the
