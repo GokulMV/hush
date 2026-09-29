@@ -185,6 +185,11 @@ final class LedgerDropTests: XCTestCase {
 }
 
 final class UpdateAndChangelogTests: XCTestCase {
+    func testChangelogBulletsAreUnwrapped() {
+        let text = "- **Bold** first line\n  continues here\n- second\n\nplain"
+        XCTAssertEqual(Changelog.unwrap(text), "• **Bold** first line continues here\n• second\n\nplain")
+    }
+
     func testVersionsCompareNumerically() {
         XCTAssertTrue(AppVersion("1.0.10") > AppVersion("1.0.9"))
         XCTAssertTrue(AppVersion("v1.2") > AppVersion("1.1.9"), "a leading v is ignored")

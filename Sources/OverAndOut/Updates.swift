@@ -73,6 +73,7 @@ final class UpdateModel: ObservableObject {
 
     /// Daily background checks (when "Check for updates automatically" is on).
     func startAutomaticChecks() {
+        reportUpdateResult()
         checkIfDue()
         timer = Timer.scheduledTimer(withTimeInterval: 3 * 60 * 60, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.checkIfDue() }
@@ -92,65 +93,128 @@ final class UpdateModel: ObservableObject {
     }
 
     private func runCheck(userInitiated: Bool) async {
-        guard let url = URL(string: "https://api.github.com/repos/\(AppInfo.repo)/releases/latest") else { return }
-        var request = URLRequest(url: url)
-        request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
-        request.setValue("OverAndOut/\(AppInfo.version)", forHTTPHeaderField: "User-Agent")
-        do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-            let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-            lastChecked = Date()
-            defaults.set(lastChecked, forKey: Self.lastCheckKey)
-            if status == 404 {
-                state = .noReleases
-                return
-            }
-            guard status == 200,
-                  let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  let tag = json["tag_name"] as? String else {
-                state = .failed("GitHub answered with status \(status).")
-                return
-            }
-            let latest = AppVersion(tag)
-            guard latest > AppVersion(AppInfo.version) else {
-                state = .upToDate
-                return
-            }
-            let page = (json["html_url"] as? String).flatMap(URL.init(string:))
-                ?? URL(string: "https://github.com/\(AppInfo.repo)/releases/latest")!
-            state = .available(version: latest.description, notes: json["body"] as? String ?? "", page: page)
-            if !userInitiated && defaults.string(forKey: Self.notifiedKey) != latest.description {
-                defaults.set(latest.description, forKey: Self.notifiedKey)
-                Notifier.post("Over&Out \(latest.description) is available",
-                              "Open the Over&Out menu → Check for Updates to see what's new and install it.")
-            }
-        } catch {
-            state = .failed(error.localizedDescription)
+        let found = await Self.latestFromAPI() ?? Self.latestFromRedirect()
+        lastChecked = Date()
+        defaults.set(lastChecked, forKey: Self.lastCheckKey)
+        guard let found else {
+            state = .failed("GitHub couldn't be reached. Check your internet connection and try again.")
+            return
         }
+        guard let tag = found.tag else {
+            state = .noReleases
+            return
+        }
+        let latest = AppVersion(tag)
+        guard latest > AppVersion(AppInfo.version) else {
+            state = .upToDate
+            return
+        }
+        state = .available(version: latest.description, notes: found.notes, page: found.page)
+        if !userInitiated && defaults.string(forKey: Self.notifiedKey) != latest.description {
+            defaults.set(latest.description, forKey: Self.notifiedKey)
+            Notifier.post("Over&Out \(latest.description) is available",
+                          "Open the Over&Out menu → Check for Updates to see what's new and install it.")
+        }
+    }
+
+    private struct LatestRelease {
+        var tag: String? // nil: the repo has no releases
+        var notes: String
+        var page: URL
+    }
+
+    private static var releasesPage: URL { URL(string: "https://github.com/\(AppInfo.repo)/releases/latest")! }
+
+    /// Never waits more than 15 s: a stalled connection used to leave "Checking…" up for good.
+    private static func fetch(_ request: URLRequest) async -> (Data, HTTPURLResponse)? {
+        var request = request
+        request.timeoutInterval = 15
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        request.setValue("OverAndOut/\(AppInfo.version)", forHTTPHeaderField: "User-Agent")
+        guard let (data, response) = try? await URLSession.shared.data(for: request),
+              let http = response as? HTTPURLResponse else { return nil }
+        return (data, http)
+    }
+
+    /// GitHub's API: version and release notes. nil when it fails (offline, or its hourly limit).
+    private static func latestFromAPI() async -> LatestRelease? {
+        var request = URLRequest(url: URL(string: "https://api.github.com/repos/\(AppInfo.repo)/releases/latest")!)
+        request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
+        guard let (data, response) = await fetch(request) else { return nil }
+        if response.statusCode == 404 { return LatestRelease(tag: nil, notes: "", page: releasesPage) }
+        guard response.statusCode == 200,
+              let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+              let tag = json["tag_name"] as? String else { return nil }
+        let page = (json["html_url"] as? String).flatMap(URL.init(string:)) ?? releasesPage
+        return LatestRelease(tag: tag, notes: json["body"] as? String ?? "", page: page)
+    }
+
+    /// Fallback without the API's limit: github.com/…/releases/latest redirects to …/tag/v1.2.3.
+    private static func latestFromRedirect() async -> LatestRelease? {
+        guard let (_, response) = await fetch(URLRequest(url: releasesPage)), response.statusCode == 200,
+              let final = response.url else { return nil }
+        guard final.path.contains("/releases/tag/") else {
+            return LatestRelease(tag: nil, notes: "", page: releasesPage) // no releases yet
+        }
+        return LatestRelease(tag: final.lastPathComponent, notes: "", page: final)
+    }
+
+    private static let pendingKey = "pendingUpdateVersion"
+    private static var logURL: URL {
+        FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Logs/OverAndOut-update.log")
     }
 
     /// Homebrew installs update through Homebrew (Over&Out quits, updates and reopens itself);
     /// other installs open the release page to download the new version.
     func install() {
-        guard case .available(_, _, let page) = state else { return }
+        guard case .available(let version, _, let page) = state else { return }
         guard AppInfo.installedWithHomebrew, let brew = AppInfo.brew else {
             NSWorkspace.shared.open(page)
             return
         }
         state = .installing
-        let log = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library/Logs/OverAndOut-update.log").path
-        // Detached, so it survives Homebrew quitting Over&Out; reopens Over&Out when done.
-        let command = "nohup /bin/sh -c '\"\(brew)\" upgrade --cask gokulmv/tap/over-and-out; /usr/bin/tccutil reset Accessibility com.gokulmv.overandout; open -b com.gokulmv.overandout' > \"\(log)\" 2>&1 &"
+        defaults.set(version, forKey: Self.pendingKey)
+        // `brew update` first: Homebrew only refreshes its list of versions about once a day, so
+        // a bare `brew upgrade` often doesn't know the new version yet and quietly does nothing.
+        // Run from a script file, detached, so it survives Homebrew quitting Over&Out.
+        let script = """
+        #!/bin/sh
+        export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+        export HOMEBREW_NO_INSTALL_CLEANUP=1
+        echo "Over&Out update to \(version), $(date)"
+        "\(brew)" update --quiet
+        "\(brew)" upgrade --cask gokulmv/tap/over-and-out
+        echo "brew finished with status $?"
+        open -b com.gokulmv.overandout
+        """
+        let scriptURL = FileManager.default.temporaryDirectory.appendingPathComponent("overandout-update.sh")
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/bin/sh")
-        process.arguments = ["-c", command]
+        process.arguments = ["-c", "nohup /bin/sh \"\(scriptURL.path)\" > \"\(Self.logURL.path)\" 2>&1 &"]
         do {
+            try script.write(to: scriptURL, atomically: true, encoding: .utf8)
             try process.run()
             Notifier.post("Updating Over&Out…", "Over&Out will close and reopen by itself in a moment.")
         } catch {
+            defaults.removeObject(forKey: Self.pendingKey)
             state = .failed("Couldn't start Homebrew: \(error.localizedDescription)")
         }
+    }
+
+    /// After an update attempt, on the next launch: confirm it, or say plainly that it didn't happen.
+    func reportUpdateResult() {
+        guard let wanted = defaults.string(forKey: Self.pendingKey) else { return }
+        defaults.removeObject(forKey: Self.pendingKey)
+        if AppVersion(AppInfo.version) >= AppVersion(wanted) {
+            Notifier.post("Over&Out updated to \(AppInfo.version)", "Open the menu → What's New to see what changed.")
+            return
+        }
+        let log = (try? String(contentsOf: Self.logURL, encoding: .utf8)) ?? ""
+        let tail = log.split(separator: "\n").suffix(4).joined(separator: "\n")
+        state = .failed("Homebrew didn't install \(wanted). You can run this in Terminal instead:\n"
+                        + "brew update && brew upgrade --cask gokulmv/tap/over-and-out"
+                        + (tail.isEmpty ? "" : "\n\nHomebrew said:\n\(tail)"))
+        Notifier.post("Over&Out couldn't update itself", "Open Settings → Updates for what went wrong.")
     }
 }
 
@@ -209,8 +273,9 @@ struct UpdatesView: View {
         case .installing:
             HStack { ProgressView().controlSize(.small); Text("Updating… Over&Out will reopen by itself.") }
         case .failed(let reason):
-            Label("Couldn't check for updates: \(reason)", systemImage: "exclamationmark.triangle")
+            Label(reason, systemImage: "exclamationmark.triangle")
                 .foregroundStyle(.orange)
+                .textSelection(.enabled)
         case .available(let version, let notes, _):
             VStack(alignment: .leading, spacing: 10) {
                 Label("Over&Out \(version) is available", systemImage: "arrow.down.circle.fill")

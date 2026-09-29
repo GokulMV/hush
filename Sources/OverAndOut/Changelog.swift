@@ -52,8 +52,26 @@ enum Changelog {
 
     /// Bold, links and inline code from Markdown; lists and line breaks kept as written.
     static func markdown(_ text: String) -> AttributedString {
-        (try? AttributedString(markdown: text, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)))
-            ?? AttributedString(text)
+        let flowing = unwrap(text)
+        return (try? AttributedString(markdown: flowing, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)))
+            ?? AttributedString(flowing)
+    }
+
+    /// The changelog is hard-wrapped at ~100 columns; joins each bullet's continuation lines so the
+    /// text wraps to the window instead of breaking mid-sentence. Bullets become "•".
+    static func unwrap(_ text: String) -> String {
+        var lines: [String] = []
+        for raw in text.components(separatedBy: .newlines) {
+            let line = raw.trimmingCharacters(in: .whitespaces)
+            if line.hasPrefix("- ") || line.hasPrefix("* ") {
+                lines.append("• " + line.dropFirst(2))
+            } else if !line.isEmpty, raw.first?.isWhitespace == true, let last = lines.last, !last.isEmpty {
+                lines[lines.count - 1] = last + " " + line
+            } else {
+                lines.append(line)
+            }
+        }
+        return lines.joined(separator: "\n")
     }
 }
 
