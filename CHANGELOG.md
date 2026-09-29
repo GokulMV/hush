@@ -9,6 +9,7 @@ notes, and Hush shows it in "What's New" after an upgrade and in Settings → Up
   froze its menu and could make the whole Mac stutter. It now mutes only real microphones, re-checks
   in the background every 2 seconds, and stops fighting a mic that keeps refusing.
 - The browser tab check has a time limit, so a busy browser can't stall Over&Out either.
+- Settings no longer freezes: the permission list is read in the background, only while its tab is open.
 
 ## 1.1.0
 - **Hush is now Over&Out.** Homebrew already had an unrelated app called `hush` (a Safari cookie-banner

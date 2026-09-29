@@ -33,7 +33,7 @@ struct SettingsView: View {
     @AppStorage(SettingsKey.browserScripting) private var browserScripting = false
 
     @State private var openAtLogin = SMAppService.mainApp.status == .enabled
-    @State private var permissions = Permissions.rows()
+    @State private var permissions: [Permissions.Row] = []
     @State private var now = Date()
     @State private var needsSetup = false
     @State private var tab: SettingsTab = .general
@@ -61,13 +61,19 @@ struct SettingsView: View {
                 .tag(SettingsTab.about)
         }
         .frame(width: 560, height: 620)
-        .onAppear { needsSetup = setupNeeded() }
+        .onAppear {
+            needsSetup = setupNeeded()
+            if tab == .permissions { loadPermissions() }
+        }
+        .onChange(of: tab) { newTab in
+            if newTab == .permissions { loadPermissions() }
+        }
         .onReceive(updates.$tabRequest.compactMap { $0 }) { requested in
             tab = requested
             updates.tabRequest = nil
         }
         .onReceive(refresh) { _ in
-            permissions = Permissions.rows()
+            if tab == .permissions { loadPermissions() }
             now = Date()
             needsSetup = setupNeeded()
             openAtLogin = SMAppService.mainApp.status == .enabled
@@ -251,6 +257,16 @@ struct SettingsView: View {
                     }
                 }
             }
+        }
+    }
+
+    /// Reading permissions asks macOS about other apps (Automation for Spotify, Music, browsers),
+    /// which can take seconds when one of them is busy. Never on the main thread; only while the
+    /// Permissions tab is showing.
+    private func loadPermissions() {
+        Task.detached(priority: .utility) {
+            let rows = Permissions.rows()
+            await MainActor.run { permissions = rows }
         }
     }
 
