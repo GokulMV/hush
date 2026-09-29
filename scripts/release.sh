@@ -38,6 +38,13 @@ UNIVERSAL=1 ./scripts/build-app.sh
 [ -s build/Hush.app/Contents/Resources/ObjectDetector.mlmodel ] \
     || echo "⚠️  Phone detector not bundled; the app will download it on first launch."
 
+# Without full Xcode the build is Apple Silicon only; say so in the cask so Intel Macs get a clear message.
+ARCH_LINE=""
+if ! lipo -archs build/Hush.app/Contents/MacOS/Hush | grep -q x86_64; then
+    ARCH_LINE='  depends_on arch: :arm64'
+    echo "⚠️  Apple Silicon only (install full Xcode for a build that also runs on Intel Macs)."
+fi
+
 ZIP="build/Hush-$VERSION.zip"
 rm -f "$ZIP"
 ditto -c -k --keepParent build/Hush.app "$ZIP"
@@ -58,6 +65,7 @@ cask "hush" do
   homepage "https://github.com/$OWNER/$REPO"
 
   depends_on macos: ">= :ventura"
+$ARCH_LINE
 
   app "Hush.app"
 
