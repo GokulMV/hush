@@ -467,6 +467,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     }
 
     func windowWillClose(_ notification: Notification) {
+        if (notification.object as? NSWindow) === setupWindow {
+            // Closing Setup counts as done; it only comes back if a permission is actually missing.
+            UserDefaults.standard.set(true, forKey: SettingsKey.hasCompletedSetup)
+        }
         if (notification.object as? NSWindow) === setupWindow, let next = afterSetup {
             afterSetup = nil
             DispatchQueue.main.async { next() }
