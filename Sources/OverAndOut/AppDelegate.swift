@@ -209,6 +209,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             menu.addItem(info(presenceLine))
             if let seen = cameraLine { menu.addItem(info(seen)) }
             menu.addItem(info(micLine))
+            if let nowPlaying = NowPlaying.latest, nowPlaying.playing {
+                let app = nowPlaying.bundleID.map(OverAndOutEngine.displayName)
+                let what = [nowPlaying.title, app].compactMap { $0 }.joined(separator: " — ")
+                menu.addItem(info("🎵  Playing: \(what.isEmpty ? "something" : what)"))
+            }
             if let paused = engine.describe(.media) { menu.addItem(info("⏸  Media paused: \(paused)")) }
             if let video = engine.describe(.meetingVideo) { menu.addItem(info("📷  Meeting camera off: \(video)")) }
             for mic in engine.unmutableMics { menu.addItem(info("⚠️  Can't mute “\(mic)”")) }

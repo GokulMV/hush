@@ -108,12 +108,18 @@ final class OverAndOutEngine {
     func poll() {
         let now = Date()
         sampleActivity()
+        NowPlaying.refreshInBackground()
         guard let activity = latestActivity else {
             onChange?()
             return
         }
         perProcessAudio = activity.perProcess
-        callApps = activity.micUsers.filter { AppClassifier.countsAsCall(micUser: $0, ownBundleID: ownBundleID) }
+        // A call is an app you can see (in the Dock) using the mic, or a known calling service.
+        // Background helpers that keep the mic open (dictation tools, noise filters, voice
+        // assistants) don't count; they used to leave a "call" running long after the meeting.
+        callApps = activity.micUsers.filter {
+            AppClassifier.countsAsCall(micUser: $0, ownBundleID: ownBundleID) && Self.isForegroundCaller($0)
+        }
         for id in activity.outputUsers where outputSince[id] == nil { outputSince[id] = now }
         outputSince = outputSince.filter { activity.outputUsers.contains($0.key) }
 
@@ -258,7 +264,15 @@ final class OverAndOutEngine {
         }
         // Only real apps count: nameless helper processes ("pid:…") and browsers whose tabs are all
         // quiet hold the speakers open without playing anything you'd watch.
-        if let playing = outputSince.keys.sorted().first(where: {
+        if !settings.awayResources.contains(.media) {
+            // Not pausing media when you step away: nothing playing needs watching.
+        } else if let nowPlaying = NowPlaying.latest {
+            // macOS's Now Playing is the one reliable answer for every app and browser tab.
+            if nowPlaying.pausable {
+                let name = nowPlaying.bundleID.map(Self.displayName) ?? nowPlaying.title ?? "Something"
+                reasons.append(.media(name))
+            }
+        } else if let playing = outputSince.keys.sorted().first(where: {
             !$0.hasPrefix("pid:") && !quietOutputs.contains($0)
                 && (AppClassifier.isMediaSource($0) || AppClassifier.scriptablePlayers.contains($0))
         }) {
@@ -398,7 +412,7 @@ final class OverAndOutEngine {
     /// Only acts on a confirmed-playing video (tab bar, or tab-level pausing): a blind ⏯ here could
     /// resume something that's still paused.
     private func repauseIfPlaying(for reason: Reason) {
-        let playing = outputSince.contains { id, _ in
+        let playing = NowPlaying.latest.map(\.pausable) ?? outputSince.contains { id, _ in
             guard AppClassifier.isMediaSource(id), let app = Self.runningApp(for: id) else { return false }
             return BrowserTabs.audibility(of: app) == .videoPlaying
         }
@@ -590,6 +604,12 @@ final class OverAndOutEngine {
     /// The app behind an audio process: "com.brave.Browser.helper" → Brave, WebKit → Safari.
     /// Helper processes are running applications too, but windowless and background-only
     /// (activation policy .prohibited), so keep going until we reach a regular app with windows.
+    /// Calling services by name, and otherwise only apps with a Dock icon (or their helpers).
+    nonisolated static func isForegroundCaller(_ id: String) -> Bool {
+        if id == AppClassifier.unknownMicUser || AppClassifier.isCallApp(id) { return true }
+        return runningApp(for: id)?.activationPolicy == .regular
+    }
+
     nonisolated static func runningApp(for bundleID: String) -> NSRunningApplication? {
         if bundleID.hasPrefix("pid:"), let pid = pid_t(bundleID.dropFirst(4)) {
             return NSRunningApplication(processIdentifier: pid)

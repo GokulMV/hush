@@ -4,6 +4,17 @@ Newest first. Each release needs a section here: `scripts/release.sh` uses it fo
 notes, and Hush shows it in "What's New" after an upgrade and in Settings → Updates.
 
 ## 1.1.12
+- **One way to pause everything.** Over&Out now asks macOS what is playing (its “Now Playing”, the same
+  thing the media keys and Control Centre use) and sends it a real Pause, then Play when you're back.
+  That covers Spotify, Music, YouTube, Netflix and any other app or browser tab the same way, needs no
+  per-app setup, and can never start something by accident (the old ⏯ key was a toggle). Spotify and
+  Music are still paused directly too, and browser tab control still pauses several tabs at once.
+- **The camera turns off after a meeting.** A call now means an app you can see in the Dock (or a calling
+  service) using the microphone; background helpers that keep the mic open no longer count, which
+  could keep a “call” going and the camera on after the meeting ended.
+- The camera only watches for playing media when “pause media when I step away” is on, and only while
+  macOS says something is actually playing (not just an app holding the speakers open).
+- The menu shows what's playing (“🎵 Playing: …”).
 - **Automation rows show ✅ when the permission is on**, even when macOS doesn't answer Over&Out's
   question about it (as happened with Spotify): Over&Out then asks the open app itself for its version,
   which only works when the permission is on. Apps that aren't open still say so.

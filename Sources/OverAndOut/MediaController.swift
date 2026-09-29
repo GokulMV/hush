@@ -1,13 +1,16 @@
 import AppKit
 
 /// Pauses whatever you are watching or listening to, and resumes exactly that later.
-/// - Spotify and Music: AppleScript ("pause if playing").
-/// - Browser tabs (Netflix, YouTube…): paused inside each tab, meeting tabs skipped (BrowserMedia).
-/// - Everything else (VLC, QuickTime, TV…): the keyboard ⏯ key, routed to the Now Playing app.
+/// - Whatever macOS says is Now Playing, in any app or browser tab: a real Pause (NowPlaying).
+/// - Spotify, Music, TV, VLC, QuickTime: also AppleScript ("pause if playing"), so several at once work.
+/// - Browser tabs (Netflix, YouTube…) with tab control on: every playing tab, meeting tabs skipped.
+/// - Only when Now Playing can't be read (older setups): the keyboard ⏯ key, as before.
 final class MediaController: @unchecked Sendable {
     private var pausedPlayers: [String] = []
     private var pausedBrowsers: [String] = []
     private var sentMediaKey = false
+    /// What Now Playing showed when it was paused (resumed only if it's still the same thing).
+    private var pausedNowPlaying: NowPlaying.State?
     /// Bumped on every resume/forget so a late browser answer can't act on a finished pause.
     private var generation = 0
 
@@ -21,7 +24,13 @@ final class MediaController: @unchecked Sendable {
     ///   also hosting the call).
     /// Returns true if anything was (or is being) paused.
     func pause(keyTargetPlaying: Bool, browsers: [String], browserKeyFallback: Bool) -> Bool {
-        if keyTargetPlaying {
+        if let nowPlaying = NowPlaying.latest {
+            // macOS knows exactly what's playing: pause that (never a toggle), whatever the app.
+            if nowPlaying.pausable {
+                NowPlaying.pause()
+                if pausedNowPlaying == nil { pausedNowPlaying = nowPlaying }
+            }
+        } else if keyTargetPlaying {
             MediaKey.playPause()
             sentMediaKey = true
         }
@@ -33,8 +42,9 @@ final class MediaController: @unchecked Sendable {
                 Task { @MainActor in
                     guard started == generation else { return }
                     if !blocked.isEmpty || !notAuthorized.isEmpty { onBrowserProblem?(blocked, notAuthorized) }
-                    // The browser couldn't be asked, so press ⏯ like before (when that's safe).
-                    if browserKeyFallback && !sentMediaKey {
+                    // The browser couldn't be asked, so press ⏯ like before (when that's safe and
+                    // Now Playing, which already paused the video if it could see it, isn't available).
+                    if browserKeyFallback && !sentMediaKey && NowPlaying.latest == nil {
                         MediaKey.playPause()
                         sentMediaKey = true
                     }
@@ -44,14 +54,15 @@ final class MediaController: @unchecked Sendable {
         for bundleID in AppClassifier.scriptablePlayers where isRunning(bundleID) && !pausedPlayers.contains(bundleID) {
             if run(bundleID, Self.pauseScript(bundleID)) == "paused" { pausedPlayers.append(bundleID) }
         }
-        return sentMediaKey || !pausedPlayers.isEmpty || !pausedBrowsers.isEmpty
+        return sentMediaKey || pausedNowPlaying != nil || !pausedPlayers.isEmpty || !pausedBrowsers.isEmpty
     }
 
     func resume() {
         let keyWillBeSent = sentMediaKey
+        let nowPlayingWillPlay = resumeNowPlaying()
         BrowserMedia.resumeAll(in: pausedBrowsers) { stillPaused in
             // The tab refused a scripted play (Netflix does this): ⏯ resumes it through the browser.
-            guard stillPaused > 0, !keyWillBeSent else { return }
+            guard stillPaused > 0, !keyWillBeSent, !nowPlayingWillPlay else { return }
             Task { @MainActor in MediaKey.playPause() }
         }
         for bundleID in pausedPlayers where isRunning(bundleID) {
@@ -61,7 +72,18 @@ final class MediaController: @unchecked Sendable {
         forget()
     }
 
+    /// Plays what Now Playing paused, unless you've since switched to something else.
+    private func resumeNowPlaying() -> Bool {
+        guard let paused = pausedNowPlaying else { return false }
+        let current = NowPlaying.latest
+        if current?.playing == true { return true } // already playing again (you, or a script above)
+        if let was = paused.bundleID, let now = current?.bundleID, was != now { return false }
+        NowPlaying.play()
+        return true
+    }
+
     func forget() {
+        pausedNowPlaying = nil
         generation += 1
         pausedPlayers = []
         pausedBrowsers = []
