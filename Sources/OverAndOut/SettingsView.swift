@@ -227,7 +227,21 @@ struct SettingsView: View {
                 Text("✅ allowed   ❌ denied   ⚪️ not asked yet   ➖ not applicable")
             }
             Section {
-                Button("Run Setup Assistant") { showSetup() }
+                if needsSetup {
+                    HStack {
+                        Label("Something Over&Out needs is still off.", systemImage: "exclamationmark.triangle")
+                            .foregroundStyle(.orange)
+                        Spacer()
+                        Button("Run Setup Assistant") { showSetup() }
+                    }
+                } else {
+                    HStack {
+                        Label("All set: Over&Out has everything it needs.", systemImage: "checkmark.seal.fill")
+                            .foregroundStyle(.green)
+                        Spacer()
+                        Button("Run Setup Again") { showSetup() }.buttonStyle(.link)
+                    }
+                }
             }
         }
         .formStyle(.grouped)

@@ -6,6 +6,7 @@ notes, and Hush shows it in "What's New" after an upgrade and in Settings → Up
 ## 1.1.9
 - **Settings → Permissions lists everything again.** It showed nothing while macOS was slow to answer
   about one app; now the list appears at once and the per-app rows fill in when ready.
+  It says “All set” when nothing is missing, and only suggests the Setup Assistant when something is.
 - Settings, Setup and other windows open truly centred on the screen you're using, never tucked
   under the menu bar.
 - If Homebrew has lost track of the installed app (“there is already an App at /Applications/Over&Out.app”),
