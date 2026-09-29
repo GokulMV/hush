@@ -291,14 +291,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     // MARK: Updates, What's New, About
 
     @objc private func checkForUpdates() {
-        openSettings(tab: .updates)
+        showSettings(tab: .updates)
         updates.check(userInitiated: true)
     }
 
-    @objc private func openUpdates() { openSettings(tab: .updates) }
-    @objc private func openAbout() { openSettings(tab: .about) }
+    @objc private func openUpdates() { showSettings(tab: .updates) }
+    @objc private func openAbout() { showSettings(tab: .about) }
 
-    private func openSettings(tab: SettingsTab) {
+    private func showSettings(tab: SettingsTab) {
         openSettings()
         updates.tabRequest = tab
     }
