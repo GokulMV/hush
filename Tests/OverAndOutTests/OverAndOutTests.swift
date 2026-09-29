@@ -224,3 +224,16 @@ final class UpdateAndChangelogTests: XCTestCase {
         XCTAssertEqual(newer.map(\.version), ["1.2.0", "1.1.0"])
     }
 }
+
+final class NowPlayingTests: XCTestCase {
+    func testOnlyPlayingNonMeetingMediaIsPausable() {
+        XCTAssertTrue(NowPlaying.State(playing: true, bundleID: "com.spotify.client", title: "Song").pausable)
+        XCTAssertTrue(NowPlaying.State(playing: true, bundleID: "com.google.Chrome", title: "Lecture - YouTube").pausable)
+        XCTAssertFalse(NowPlaying.State(playing: false, bundleID: "com.spotify.client", title: "Song").pausable,
+                       "already paused: nothing to do")
+        XCTAssertFalse(NowPlaying.State(playing: true, bundleID: "us.zoom.xos", title: nil).pausable,
+                       "never pause the call app itself")
+        XCTAssertFalse(NowPlaying.State(playing: true, bundleID: "com.google.Chrome", title: "Meet - abc-defg-hij").pausable,
+                       "never pause a meeting tab")
+    }
+}
