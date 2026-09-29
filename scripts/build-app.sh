@@ -28,6 +28,15 @@ if [ -s Resources/ObjectDetector.mlmodel ]; then
 else
     echo "⚠️  Building without the phone detector: the app will download it on first launch."
 fi
-codesign --force --sign - "$APP"
+# Sign with the same certificate every time (scripts/setup-signing.sh), so macOS keeps the app's
+# permissions across updates. Without it: ad-hoc signature, and permissions are asked again.
+SIGN_ID="Over&Out Self-Signed"
+if security find-identity -p codesigning 2>/dev/null | grep -q "$SIGN_ID"; then
+    codesign --force --sign "$SIGN_ID" "$APP"
+else
+    codesign --force --sign - "$APP"
+    echo "⚠️  Ad-hoc signed: macOS will ask for permissions again after each update."
+    echo "    Run ./scripts/setup-signing.sh once to fix that."
+fi
 
 echo "Built $APP"

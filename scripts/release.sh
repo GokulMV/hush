@@ -11,6 +11,11 @@ cd "$(dirname "$0")/.."
 
 VERSION="${1:?usage: ./scripts/release.sh <version, e.g. 1.0.0>}"
 command -v gh >/dev/null || { echo "Install the GitHub CLI first: brew install gh && gh auth login"; exit 1; }
+# Releases must always be signed with the same certificate, or users are asked for permissions again.
+if ! security find-identity -p codesigning 2>/dev/null | grep -q "Over&Out Self-Signed"; then
+    echo "Run ./scripts/setup-signing.sh once first (keeps users' permissions across updates)."
+    exit 1
+fi
 
 # Release notes come from CHANGELOG.md ("## <version> …" section); the app shows the same text.
 NOTES="$(awk -v v="$VERSION" '

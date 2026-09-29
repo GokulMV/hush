@@ -125,6 +125,7 @@ its settings). The first launch opens the Setup Assistant.
 
 ```bash
 brew install gh && gh auth login     # once
+./scripts/setup-signing.sh           # once: stable signature, users keep permissions across updates
 ./scripts/release.sh 1.0.0
 ```
 

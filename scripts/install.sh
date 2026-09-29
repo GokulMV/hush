@@ -23,9 +23,11 @@ remove_app com.gokulmv.hush       # this app's previous name (not the unrelated 
 remove_app com.gokulmv.callguard  # and the one before that
 rm -rf "/Applications/Over&Out.app"
 
-# Every build has a new signature, so macOS silently ignores an old Accessibility ✓.
-# Clearing it makes Over&Out ask again cleanly instead of failing quietly.
-tccutil reset Accessibility com.gokulmv.overandout >/dev/null 2>&1 || true
+# An ad-hoc build has a new signature every time, so macOS silently ignores an old Accessibility ✓:
+# clear it so Over&Out asks again cleanly. Builds signed with the stable certificate keep permissions.
+if codesign -dv "build/Over&Out.app" 2>&1 | grep -q "Signature=adhoc"; then
+    tccutil reset Accessibility com.gokulmv.overandout >/dev/null 2>&1 || true
+fi
 tccutil reset All com.gokulmv.hush >/dev/null 2>&1 || true
 tccutil reset All com.gokulmv.callguard >/dev/null 2>&1 || true
 
