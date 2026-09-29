@@ -10,12 +10,14 @@ final class DropDownPanel: NSPanel {
     private static let margin: CGFloat = 8
     private let preferredHeight: CGFloat
     private var outsideClicks: Any?
+    private var shownAt = Date.distantPast
 
     init<Content: View>(width: CGFloat, preferredHeight: CGFloat, content: Content) {
         self.preferredHeight = preferredHeight
         super.init(contentRect: NSRect(x: 0, y: 0, width: width, height: preferredHeight),
                    styleMask: [.borderless], backing: .buffered, defer: false)
         isReleasedWhenClosed = false
+        hidesOnDeactivate = false // panels vanish when their app loses focus unless told otherwise
         isOpaque = false
         backgroundColor = .clear
         hasShadow = true
@@ -56,6 +58,7 @@ final class DropDownPanel: NSPanel {
         setFrame(NSRect(x: x, y: top - height, width: width, height: height), display: true)
 
         NSApp.activate(ignoringOtherApps: true)
+        shownAt = Date()
         makeKeyAndOrderFront(nil)
         watchOutsideClicks()
     }
@@ -67,7 +70,11 @@ final class DropDownPanel: NSPanel {
     private func watchOutsideClicks() {
         if outsideClicks != nil { return }
         outsideClicks = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
-            Task { @MainActor in self?.close() }
+            Task { @MainActor in
+                // Ignore the tail of the click that opened it.
+                guard let self, Date().timeIntervalSince(self.shownAt) > 0.4 else { return }
+                self.close()
+            }
         }
     }
 
