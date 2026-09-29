@@ -56,7 +56,7 @@ final class OverAndOutEngine {
         settings = Settings.shared
         // Undo anything a previous crash left behind.
         MicMuter.unmute()
-        VolumeDucker.restore()
+        VolumeDucker.restoreInBackground()
 
         sensor.onAnalysis = { [weak self] analysis, image in
             self?.previewHandler?(analysis, image)
@@ -77,9 +77,31 @@ final class OverAndOutEngine {
 
     // MARK: Heartbeat (once a second)
 
+    /// Which apps use the mic and speakers, sampled in the background: every Core Audio query is a
+    /// round trip to coreaudiod, and when that daemon is busy a query on the main thread froze the
+    /// whole app ("Not Responding"). The main thread only ever reads the latest finished sample.
+    private var latestActivity: AudioActivity?
+    private var sampling = false
+
+    private func sampleActivity() {
+        guard !sampling else { return } // a slow sample is still running: don't pile up
+        sampling = true
+        Task.detached(priority: .userInitiated) { [weak self] in
+            let activity = AudioDevices.activity()
+            await MainActor.run {
+                self?.latestActivity = activity
+                self?.sampling = false
+            }
+        }
+    }
+
     func poll() {
         let now = Date()
-        let activity = AudioDevices.activity()
+        sampleActivity()
+        guard let activity = latestActivity else {
+            onChange?()
+            return
+        }
         perProcessAudio = activity.perProcess
         callApps = activity.micUsers.filter { AppClassifier.countsAsCall(micUser: $0, ownBundleID: ownBundleID) }
         for id in activity.outputUsers where outputSince[id] == nil { outputSince[id] = now }
@@ -299,7 +321,7 @@ final class OverAndOutEngine {
     func shutdown() {
         sensor.stop()
         for resource in applied { undo(resource) }
-        MicMuter.unmute()
+        MicMuter.unmuteBeforeQuit() // give the mic back before quitting (waits at most 2 s)
         VolumeDucker.restore()
     }
 
@@ -348,12 +370,15 @@ final class OverAndOutEngine {
         let changed: Bool
         switch resource {
         case .mic:
-            unmutableMics = MicMuter.mute()
-            if !unmutableMics.isEmpty {
-                Notifier.post("Couldn't mute \(unmutableMics.joined(separator: ", "))",
-                              "This microphone has no mute or volume control. Mute it in your meeting app.")
+            MicMuter.mute { unmutable in
+                guard !unmutable.isEmpty else { return }
+                Task { @MainActor [weak self] in
+                    self?.unmutableMics = unmutable
+                    Notifier.post("Couldn't mute \(unmutable.joined(separator: ", "))",
+                                  "This microphone has no mute or volume control. Mute it in your meeting app.")
+                }
             }
-            changed = MicMuter.isMuted
+            changed = true
         case .meetingAudio:
             warnIfAccessibilityMissing()
             MeetingControl.shared.turnOff(.audio, in: meetingApps())
@@ -369,7 +394,8 @@ final class OverAndOutEngine {
             changed = media.pause(keyTargetPlaying: plan.keyTarget, browsers: plan.browsers,
                                   browserKeyFallback: plan.keyFallback)
         case .volume:
-            changed = VolumeDucker.duck(to: settings.duckLevel)
+            VolumeDucker.duckInBackground(to: settings.duckLevel)
+            changed = true
         }
         if changed {
             applied.insert(resource)
@@ -391,7 +417,7 @@ final class OverAndOutEngine {
         case .media:
             if settings.autoResumeMedia { media.resume() } else { media.forget() }
         case .volume:
-            VolumeDucker.restore()
+            VolumeDucker.restoreInBackground()
         }
     }
 

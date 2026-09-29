@@ -36,13 +36,28 @@ enum MicMuter {
     /// Mutes every physical microphone (virtual/aggregate devices such as ZoomAudioDevice, Teams
     /// Audio or BlackHole are left alone: muting the real mic already silences you everywhere).
     /// Returns names of mics that have neither a mute switch nor a volume control.
-    @discardableResult
-    static func mute() -> [String] {
-        queue.sync { muteLocked() }
+    /// Mutes in the background (never blocks the caller, even if coreaudiod is slow) and reports
+    /// the mics that couldn't be muted.
+    static func mute(completion: (@Sendable ([String]) -> Void)? = nil) {
+        queue.async {
+            let unmutable = muteLocked()
+            completion?(unmutable)
+        }
     }
 
+    /// Unmutes in the background.
     static func unmute() {
-        queue.sync { unmuteLocked() }
+        queue.async { unmuteLocked() }
+    }
+
+    /// For quitting: unmute and wait, but never more than 2 s.
+    static func unmuteBeforeQuit() {
+        let done = DispatchSemaphore(value: 0)
+        queue.async {
+            unmuteLocked()
+            done.signal()
+        }
+        _ = done.wait(timeout: .now() + 2)
     }
 
     /// Call often (e.g. every poll); runs at most every 2 s, in the background. Mutes mics plugged

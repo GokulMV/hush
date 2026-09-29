@@ -8,6 +8,17 @@ enum VolumeDucker {
 
     static var isDucked: Bool { defaults.object(forKey: originalKey) != nil }
 
+    /// Core Audio can be slow when coreaudiod is busy: never do it on the main thread.
+    private static let queue = DispatchQueue(label: "overandout.volume")
+
+    static func duckInBackground(to level: Float32) {
+        queue.async { _ = duck(to: level) }
+    }
+
+    static func restoreInBackground() {
+        queue.async { restore() }
+    }
+
     /// Returns true if the volume was actually lowered.
     static func duck(to level: Float32) -> Bool {
         guard !isDucked,
