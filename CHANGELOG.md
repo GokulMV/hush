@@ -3,13 +3,15 @@
 Newest first. Each release needs a section here: `scripts/release.sh` uses it for the GitHub release
 notes, and Hush shows it in "What's New" after an upgrade and in Settings → Updates.
 
+## 1.1.9
+- If Homebrew has lost track of the installed app (“there is already an App at /Applications/Over&Out.app”),
+  Update Now reinstalls over it instead of failing. The Homebrew cask uses the new Homebrew 7 install
+  steps, so `brew` no longer prints deprecation warnings about it.
+
 ## 1.1.8
 - **Updating from the app works again.** “Update Now” refreshes Homebrew first (it used to find nothing
   new and quietly reopen the old version), and after reopening Over&Out tells you whether the update
   really happened, with what Homebrew said if it didn't.
-- If Homebrew has lost track of the installed app (“there is already an App at /Applications/Over&Out.app”),
-  Update Now reinstalls over it instead of failing. The Homebrew cask uses the new Homebrew 7 install
-  steps, so `brew` no longer prints deprecation warnings about it.
 - **Checking for updates no longer gets stuck on “Checking…”**: it gives up after 15 seconds, and
   falls back to github.com when GitHub's API is busy.
 - Release notes wrap to the window instead of breaking mid-sentence, leave out the Homebrew install
