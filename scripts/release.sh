@@ -48,7 +48,7 @@ UNIVERSAL=1 ./scripts/build-app.sh
 ARCH_LINE=""
 if ! lipo -archs "build/Over&Out.app/Contents/MacOS/OverAndOut" | grep -q x86_64; then
     ARCH_LINE='  depends_on arch: :arm64'
-    echo "⚠️  Apple Silicon only (install full Xcode for a build that also runs on Intel Macs)."
+    echo "⚠️  Apple Silicon only this time (the Intel part didn't build; see the messages above)."
 fi
 
 ZIP="build/OverAndOut-$VERSION.zip"

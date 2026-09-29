@@ -4,6 +4,8 @@ Newest first. Each release needs a section here: `scripts/release.sh` uses it fo
 notes, and Hush shows it in "What's New" after an upgrade and in Settings → Updates.
 
 ## 1.1.12
+- **Runs on Intel Macs again.** Releases are built for both Apple Silicon and Intel even on a Mac with
+  only the Command Line Tools (each chip is built separately and joined), instead of Apple Silicon only.
 - **Add any call app yourself** (Settings → Calls & Media → Other call apps → Add App…). Its microphone
   use then counts as a call, and Over&Out asks for the permission it needs (Accessibility) right away.
   If the app's camera or mute isn't switched off when you step away, start a call in it and press
