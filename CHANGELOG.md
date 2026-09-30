@@ -3,6 +3,19 @@
 Newest first. Each release needs a section here: `scripts/release.sh` uses it for the GitHub release
 notes, and Hush shows it in "What's New" after an upgrade and in Settings → Updates.
 
+## 1.2.0
+- **Pause when headphones disconnect**, like an iPhone: unplug headphones or lose your AirPods and
+  whatever is playing pauses instead of blasting from the speakers (press play to continue).
+- **Lock screen, lid closed or Mac asleep → muted and paused**, and given back when you unlock.
+- **Focus during calls and while you're away** (optional): Over&Out runs two shortcuts you make once in
+  the Shortcuts app to turn Do Not Disturb (or any Focus) on and off. Settings → Calls & Media → Focus.
+- **Your own keyboard shortcuts**: Settings → General → click a shortcut and press a new one, switch
+  one off, or reset it. The menu shows them.
+- **Lower Spotify and Music instead of pausing them** (optional): they keep playing quietly during a
+  call or while you're away, and their volume goes back afterwards. Settings → Calls & Media → Music.
+- The name and icon now have a trademark note (TRADEMARKS.md): the code is GPL, but a modified version
+  needs its own name and icon.
+
 ## 1.1.14
 - **Over&Out is now open source under the GNU GPL v3 (or later)**: free to use, study, share and change;
   shared modified versions must stay open source too. See LICENSE and THIRD_PARTY_NOTICES.md (also inside

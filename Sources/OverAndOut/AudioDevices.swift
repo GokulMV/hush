@@ -61,6 +61,15 @@ enum AudioDevices {
         uint32(system, kAudioHardwarePropertyDefaultOutputDevice).flatMap { $0 == 0 ? nil : $0 }
     }
 
+    /// Sound is coming out of the Mac's own speakers (not headphones in the jack, AirPods,
+    /// Bluetooth, USB or a display). Used to pause when headphones are unplugged.
+    static var outputIsBuiltInSpeakers: Bool {
+        guard let device = defaultOutput,
+              uint32(device, kAudioDevicePropertyTransportType) == kAudioDeviceTransportTypeBuiltIn else { return false }
+        // The built-in output switches its data source to "hdpn" when headphones are in the jack.
+        return uint32(device, kAudioDevicePropertyDataSource, kAudioObjectPropertyScopeOutput) != 0x6864_706E // 'hdpn'
+    }
+
     static func uid(_ device: AudioDeviceID) -> String? {
         string(device, kAudioDevicePropertyDeviceUID)
     }

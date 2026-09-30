@@ -44,6 +44,7 @@ cp CHANGELOG.md "$APP/Contents/Resources/CHANGELOG.md"
 # so the app downloads them from Apple itself on first launch (see THIRD_PARTY_NOTICES.md).
 cp LICENSE "$APP/Contents/Resources/LICENSE"
 cp THIRD_PARTY_NOTICES.md "$APP/Contents/Resources/THIRD_PARTY_NOTICES.md"
+cp TRADEMARKS.md "$APP/Contents/Resources/TRADEMARKS.md"
 # Sign with the same certificate every time (scripts/setup-signing.sh), so macOS keeps the app's
 # permissions across updates. Without it: ad-hoc signature, and permissions are asked again.
 SIGN_ID="Over&Out Self-Signed"

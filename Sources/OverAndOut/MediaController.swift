@@ -8,6 +8,9 @@ import AppKit
 ///   Pause (NowPlaying), and Play when you're back.
 final class MediaController: @unchecked Sendable {
     private var pausedPlayers: [String] = []
+    /// Spotify / Music turned down instead of paused (the "lower volume" option), with the volume
+    /// each had before, to put back.
+    private var loweredPlayers: [String: Int] = [:]
     private var pausedBrowsers: [String] = []
     private var sentMediaKey = false
     /// What Now Playing showed when it was paused (resumed only if it's still the same thing).
@@ -24,7 +27,7 @@ final class MediaController: @unchecked Sendable {
     /// - browserKeyFallback: if a browser refuses, the ⏯ key is safe to use instead (it isn't
     ///   also hosting the call).
     /// Returns true if anything was (or is being) paused.
-    func pause(keyTargetPlaying: Bool, browsers: [String], browserKeyFallback: Bool) -> Bool {
+    func pause(keyTargetPlaying: Bool, browsers: [String], browserKeyFallback: Bool, allowLowering: Bool = true) -> Bool {
         if keyTargetPlaying {
             MediaKey.playPause()
             sentMediaKey = true
@@ -46,10 +49,18 @@ final class MediaController: @unchecked Sendable {
             }
         }
         for bundleID in AppClassifier.scriptablePlayers where isRunning(bundleID) && !pausedPlayers.contains(bundleID) {
+            if allowLowering, Self.lowerInsteadOfPause, Self.lowerable.contains(bundleID) {
+                guard loweredPlayers[bundleID] == nil else { continue }
+                if let answer = run(bundleID, Self.lowerScript(to: Self.lowerLevel)), let before = Int(answer) {
+                    loweredPlayers[bundleID] = before
+                }
+                continue
+            }
             if run(bundleID, Self.pauseScript(bundleID)) == "paused" { pausedPlayers.append(bundleID) }
         }
         pauseNowPlayingIfUnhandled(browsers: browsers)
         return sentMediaKey || pausedNowPlaying != nil || !pausedPlayers.isEmpty || !pausedBrowsers.isEmpty
+            || !loweredPlayers.isEmpty
     }
 
     func resume() {
@@ -62,6 +73,9 @@ final class MediaController: @unchecked Sendable {
         }
         for bundleID in pausedPlayers where isRunning(bundleID) {
             _ = run(bundleID, Self.resumeScript(bundleID))
+        }
+        for (bundleID, volume) in loweredPlayers where isRunning(bundleID) {
+            _ = run(bundleID, "set sound volume to \(volume)")
         }
         if sentMediaKey { MediaKey.playPause() }
         forget()
@@ -96,11 +110,32 @@ final class MediaController: @unchecked Sendable {
     }
 
     func forget() {
+        loweredPlayers = [:]
         pausedNowPlaying = nil
         generation += 1
         pausedPlayers = []
         pausedBrowsers = []
         sentMediaKey = false
+    }
+
+    // MARK: Lower instead of pause (Settings → Calls & Media)
+
+    /// Players with their own volume that AppleScript can set.
+    private static let lowerable: Set<String> = ["com.spotify.client", "com.apple.Music"]
+
+    private static var lowerInsteadOfPause: Bool {
+        UserDefaults.standard.string(forKey: SettingsKey.musicAction) == MusicAction.lower.rawValue
+    }
+
+    /// 0…100, the player's own volume scale.
+    private static var lowerLevel: Int {
+        let level = UserDefaults.standard.object(forKey: SettingsKey.musicLowerLevel) as? Double ?? 0.2
+        return max(0, min(100, Int((level * 100).rounded())))
+    }
+
+    /// "If playing, remember the volume and turn it down", answering the old volume.
+    private static func lowerScript(to level: Int) -> String {
+        "if player state is playing then\nset v to sound volume\nif v > \(level) then set sound volume to \(level)\nreturn v as text\nend if\nreturn \"idle\""
     }
 
     /// "Pause if playing", answering "paused" when it did. Each app's AppleScript differs a little.

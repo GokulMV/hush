@@ -22,6 +22,13 @@ final class HotKeys {
         }
     }
 
+    /// Removes every registered shortcut (before registering the current set again).
+    func unregisterAll() {
+        for ref in refs { UnregisterEventHotKey(ref) }
+        refs = []
+        handlers = [:]
+    }
+
     fileprivate func fire(_ id: UInt32) {
         handlers[id]?()
     }

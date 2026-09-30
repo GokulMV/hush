@@ -40,11 +40,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             Permissions.requestAccessibility(clearStaleEntry: updated, prompt: !setupComing, openSettings: false)
         }
 
-        HotKeys.shared.register(keyCode: kVK_ANSI_M) { [weak self] in self?.engine.toggleMic() }
-        HotKeys.shared.register(keyCode: kVK_ANSI_P) { [weak self] in self?.engine.togglePanic() }
-        HotKeys.shared.register(keyCode: kVK_ANSI_G) { [weak self] in self?.engine.toggleEnabled() }
-        HotKeys.shared.register(keyCode: kVK_ANSI_C) { [weak self] in self?.engine.toggleCamera() }
-        HotKeys.shared.register(keyCode: kVK_ANSI_H) { [weak self] in self?.showMenuAtPointer() }
+        registerHotKeys()
+        NotificationCenter.default.addObserver(forName: ShortcutStore.changed, object: nil, queue: .main) { [weak self] _ in
+            Task { @MainActor in self?.registerHotKeys() }
+        }
 
         timer = Timer.scheduledTimer(timeInterval: 0.5, target: self, selector: #selector(tick), userInfo: nil, repeats: true)
         // Keep running while the menu is open (menus track events in another run-loop mode), so
@@ -205,7 +204,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
 
-        menu.addItem(item(settings.enabled ? "Turn Over&Out Off" : "Turn Over&Out On", #selector(toggleEnabled), key: "g"))
+        menu.addItem(item(settings.enabled ? "Turn Over&Out Off" : "Turn Over&Out On", #selector(toggleEnabled), shortcut: .enabled))
         menu.addItem(.separator())
         if settings.enabled {
             menu.addItem(info(callLine))
@@ -223,12 +222,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             menu.addItem(.separator())
         }
 
-        menu.addItem(item(MicMuter.isMuted ? "Unmute Microphone" : "Mute Microphone", #selector(toggleMic), key: "m"))
-        menu.addItem(item(engine.panicActive ? "End Panic Mode" : "Panic: Mute, Video Off, Pause", #selector(togglePanic), key: "p"))
+        menu.addItem(item(MicMuter.isMuted ? "Unmute Microphone" : "Mute Microphone", #selector(toggleMic), shortcut: .mic))
+        menu.addItem(item(engine.panicActive ? "End Panic Mode" : "Panic: Mute, Video Off, Pause", #selector(togglePanic), shortcut: .panic))
 
         menu.addItem(.separator())
         menu.addItem(info(cameraStatusLine))
-        menu.addItem(item(settings.cameraActive ? "Turn Over&Out Camera Off" : "Turn Over&Out Camera On", #selector(toggleCamera), key: "c"))
+        menu.addItem(item(settings.cameraActive ? "Turn Over&Out Camera Off" : "Turn Over&Out Camera On", #selector(toggleCamera), shortcut: .camera))
         let pauses = [15, 30, 60, 120].map { minutes -> NSMenuItem in
             let menuItem = item(minutes < 60 ? "\(minutes) minutes" : minutes == 60 ? "1 hour" : "\(minutes / 60) hours",
                                 #selector(pauseCamera(_:)), modifiers: [])
@@ -320,6 +319,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         for child in items { menu.addItem(child) }
         parent.submenu = menu
         return parent
+    }
+
+    /// The shortcuts from Settings → General (⌃⌥⌘ + letter unless you changed them).
+    private func registerHotKeys() {
+        HotKeys.shared.unregisterAll()
+        for action in ShortcutAction.allCases {
+            guard let shortcut = ShortcutStore.shortcut(for: action) else { continue }
+            HotKeys.shared.register(keyCode: shortcut.keyCode, modifiers: shortcut.modifiers) { [weak self] in
+                self?.perform(action)
+            }
+        }
+    }
+
+    private func perform(_ action: ShortcutAction) {
+        switch action {
+        case .menu: showMenuAtPointer()
+        case .enabled: engine.toggleEnabled()
+        case .camera: engine.toggleCamera()
+        case .mic: engine.toggleMic()
+        case .panic: engine.togglePanic()
+        }
+    }
+
+    /// A menu item showing the action's current shortcut.
+    private func item(_ title: String, _ selector: Selector, shortcut action: ShortcutAction) -> NSMenuItem {
+        let shortcut = ShortcutStore.shortcut(for: action)
+        return item(title, selector, key: shortcut?.menuKey ?? "", modifiers: shortcut?.menuModifiers ?? [])
     }
 
     private func item(_ title: String, _ action: Selector, key: String = "",

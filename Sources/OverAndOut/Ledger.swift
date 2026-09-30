@@ -8,11 +8,14 @@ enum Reason: String, CaseIterable, Hashable {
     case phone = "phone at your ear"
     case panic = "panic mode"
     case manual = "you muted it"
+    case locked = "screen locked"
 }
 
 /// Things Over&Out can take away and later give back.
 enum Resource: String, CaseIterable, Hashable {
     case mic, meetingAudio, meetingVideo, media, volume
+    /// A Focus (Do Not Disturb…) switched on through the Shortcuts app.
+    case focus
 }
 
 /// Reference-counts holds per resource so overlapping reasons never undo each other early:

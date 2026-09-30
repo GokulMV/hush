@@ -68,6 +68,13 @@ struct AboutView: View {
                 Link(destination: repoURL) {
                     Label("Source code", systemImage: "chevron.left.forwardslash.chevron.right")
                 }
+                Text("The name “Over&Out” and its icon are trademarks of Gokul MV and aren't covered by the GPL: a modified version needs its own name and icon.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Link(destination: repoURL.appendingPathComponent("blob/main/TRADEMARKS.md")) {
+                    Label("Trademark policy", systemImage: "c.circle")
+                }
                 Text(verbatim: "© \(String(Calendar.current.component(.year, from: Date()))) Gokul MV")
                     .font(.callout)
                     .foregroundStyle(.secondary)

@@ -70,6 +70,8 @@ final class OverAndOutEngine {
             self?.reportBrowserProblem(blocked: blocked, notAuthorized: notAuthorized)
         }
 
+        watchLockAndSleep()
+
         NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didLaunchApplicationNotification, object: nil, queue: .main
         ) { [weak self] note in
@@ -94,6 +96,7 @@ final class OverAndOutEngine {
         sampling = true
         Task.detached(priority: .userInitiated) { [weak self] in
             let activity = AudioDevices.activity()
+            let speakers = AudioDevices.outputIsBuiltInSpeakers
             // Browsers keep their sound output open for pages that aren't playing anything
             // (a paused video, a site's audio engine). Their tab bar says whether a tab really plays,
             // so a quiet browser doesn't keep the camera on. Read here, off the main thread.
@@ -103,6 +106,7 @@ final class OverAndOutEngine {
             })
             await MainActor.run {
                 self?.latestActivity = activity
+                self?.noticeOutputRoute(speakers: speakers)
                 self?.quietOutputs = quiet
                 self?.sampling = false
             }
@@ -178,6 +182,7 @@ final class OverAndOutEngine {
         var resources: [Resource] = []
         if settings.callPauseMedia { resources.append(.media) }
         if settings.callMuteOnJoin { resources += [.mic, .meetingAudio] }
+        if settings.focusDuringCalls { resources.append(.focus) }
         engage(.call, resources)
         release(.ring) // answered: stop ducking so you can hear the caller
         if settings.callMuteOnJoin {
@@ -200,6 +205,65 @@ final class OverAndOutEngine {
         lastMicSeen = nil
         release(.call)
         release(.manual) // a manual mute lasts until you unmute or the call ends
+    }
+
+    // MARK: Screen lock, sleep, headphones
+
+    /// Screen locked, display asleep, lid closed or Mac asleep: mute and pause (you're not there),
+    /// and give it back when you unlock.
+    private func watchLockAndSleep() {
+        let distributed = DistributedNotificationCenter.default()
+        distributed.addObserver(forName: Notification.Name("com.apple.screenIsLocked"), object: nil, queue: .main) { [weak self] _ in
+            Task { @MainActor in self?.screenLocked() }
+        }
+        distributed.addObserver(forName: Notification.Name("com.apple.screenIsUnlocked"), object: nil, queue: .main) { [weak self] _ in
+            Task { @MainActor in self?.screenUnlocked() }
+        }
+        let workspace = NSWorkspace.shared.notificationCenter
+        for name in [NSWorkspace.willSleepNotification, NSWorkspace.screensDidSleepNotification] {
+            workspace.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                Task { @MainActor in self?.screenLocked() }
+            }
+        }
+        for name in [NSWorkspace.didWakeNotification, NSWorkspace.screensDidWakeNotification] {
+            workspace.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                // Waking isn't unlocking: only give things back if no password screen is up.
+                Task { @MainActor in if !Self.screenIsLocked { self?.screenUnlocked() } }
+            }
+        }
+    }
+
+    private func screenLocked() {
+        guard settings.enabled, settings.lockProtect else { return }
+        engage(.locked, [.mic, .media])
+        onChange?()
+    }
+
+    private func screenUnlocked() {
+        release(.locked)
+        onChange?()
+    }
+
+    /// Whether the login window / lock screen is showing right now.
+    private static var screenIsLocked: Bool {
+        guard let session = CGSessionCopyCurrentDictionary() as? [String: Any] else { return false }
+        return (session["CGSSessionScreenIsLocked"] as? Bool) ?? ((session["CGSSessionScreenIsLocked"] as? Int) == 1)
+    }
+
+    private var outputWasSpeakers: Bool?
+
+    /// Headphones or AirPods disconnected, so sound would suddenly come out of the speakers:
+    /// pause, like an iPhone does. (Not resumed by itself, also like an iPhone.)
+    private func noticeOutputRoute(speakers: Bool) {
+        defer { outputWasSpeakers = speakers }
+        guard outputWasSpeakers == false, speakers, settings.enabled, settings.pauseOnUnplug else { return }
+        guard !applied.contains(.media) else { return } // already paused for another reason
+        let plan = mediaPlan(steadyOnly: false)
+        if media.pause(keyTargetPlaying: plan.keyTarget, browsers: plan.browsers, browserKeyFallback: plan.keyFallback,
+                       allowLowering: false) { // headphones out: really pause, even in "lower volume" mode
+            media.forget() // nothing to resume later
+            Notifier.post("Paused: headphones disconnected", "Press play when you want the sound on the speakers.")
+        }
     }
 
     /// Incoming iPhone/FaceTime calls launch FaceTime on the Mac: treat that as ringing.
@@ -352,7 +416,9 @@ final class OverAndOutEngine {
         if panicActive {
             release(.panic)
         } else {
-            engage(.panic, Resource.allCases)
+            engage(.panic, Resource.allCases.filter {
+                $0 != .focus || settings.focusDuringCalls || settings.awayResources.contains(.focus)
+            })
             Notifier.post("Panic mode on", "Mic muted, camera off, media paused. Press ⌃⌥⌘P to undo.")
         }
         onChange?()
@@ -406,7 +472,7 @@ final class OverAndOutEngine {
         callPhase = .idle
         lastMicSeen = nil
         recentCallApps = []
-        for reason in [Reason.ring, .call, .away, .phone] { release(reason) }
+        for reason in [Reason.ring, .call, .away, .phone, .locked] { release(reason) }
     }
 
     /// Give everything back before quitting.
@@ -488,6 +554,9 @@ final class OverAndOutEngine {
         case .volume:
             VolumeDucker.duckInBackground(to: settings.duckLevel)
             changed = true
+        case .focus:
+            FocusShortcuts.turnOn()
+            changed = true
         }
         if changed {
             applied.insert(resource)
@@ -510,6 +579,8 @@ final class OverAndOutEngine {
             if settings.autoResumeMedia { media.resume() } else { media.forget() }
         case .volume:
             VolumeDucker.restoreInBackground()
+        case .focus:
+            FocusShortcuts.turnOff()
         }
     }
 

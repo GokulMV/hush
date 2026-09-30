@@ -61,6 +61,10 @@ struct SettingsView: View {
     @AppStorage(SettingsKey.duckLevel) private var duckLevel = 0.3
     @AppStorage(SettingsKey.showNotifications) private var showNotifications = true
     @AppStorage(SettingsKey.browserScripting) private var browserScripting = false
+    @AppStorage(SettingsKey.pauseOnUnplug) private var pauseOnUnplug = true
+    @AppStorage(SettingsKey.lockProtect) private var lockProtect = true
+    @AppStorage(SettingsKey.musicAction) private var musicAction = MusicAction.pause.rawValue
+    @AppStorage(SettingsKey.musicLowerLevel) private var musicLowerLevel = 0.2
 
     @State private var openAtLogin = SMAppService.mainApp.status == .enabled
     @State private var permissions: [Permissions.Row] = []
@@ -125,12 +129,12 @@ struct SettingsView: View {
                     .onChange(of: openAtLogin) { wanted in setOpenAtLogin(wanted) }
             }
 
-            Section("Keyboard shortcuts") {
-                shortcut("⌃⌥⌘H", "Open Over&Out's menu (even if its icon is hidden)")
-                shortcut("⌃⌥⌘G", "Turn Over&Out on / off")
-                shortcut("⌃⌥⌘C", "Over&Out camera on / off")
-                shortcut("⌃⌥⌘M", "Mute / unmute microphone")
-                shortcut("⌃⌥⌘P", "Panic: mute, video off, pause, lower volume")
+            Section {
+                ForEach(ShortcutAction.allCases) { ShortcutRecorderRow(action: $0) }
+            } header: {
+                Text("Keyboard shortcuts")
+            } footer: {
+                Text("Click a shortcut, then press the new one (with ⌃, ⌥ or ⌘). They work from any app.")
             }
 
             Section {
@@ -194,6 +198,35 @@ struct SettingsView: View {
                 }
                 .disabled(!ringProtect)
             }
+
+            Section {
+                Picker("Spotify and Music", selection: $musicAction) {
+                    Text("Pause them").tag(MusicAction.pause.rawValue)
+                    Text("Lower their volume").tag(MusicAction.lower.rawValue)
+                }
+                if musicAction == MusicAction.lower.rawValue {
+                    HStack {
+                        Text("Lowered volume")
+                        Slider(value: $musicLowerLevel, in: 0...0.6)
+                        Text("\(Int(musicLowerLevel * 100))%").monospacedDigit().frame(width: 40, alignment: .trailing)
+                    }
+                }
+            } header: {
+                Text("Music")
+            } footer: {
+                Text("When a call starts or you step away. Lowering keeps the music going quietly and puts the volume back afterwards; videos in browsers and other players are still paused.")
+            }
+
+            Section {
+                Toggle("Pause when headphones or AirPods disconnect", isOn: $pauseOnUnplug)
+                Toggle("Mute and pause while the screen is locked or the Mac sleeps", isOn: $lockProtect)
+            } header: {
+                Text("Also")
+            } footer: {
+                Text("Like an iPhone, unplugging doesn't resume by itself: press play when you want sound from the speakers. Locking, closing the lid or sleeping mutes your mic and pauses media, and gives both back when you unlock.")
+            }
+
+            FocusSection()
 
             CustomAppsSection()
 

@@ -24,6 +24,14 @@ final class Settings {
             Key.showNotifications: true,
             Key.browserScripting: false,
             Key.autoCheckUpdates: true,
+            Key.pauseOnUnplug: true,
+            Key.lockProtect: true,
+            Key.focusDuringCalls: false,
+            Key.focusWhenAway: false,
+            Key.focusOnShortcut: "Over&Out Focus On",
+            Key.focusOffShortcut: "Over&Out Focus Off",
+            Key.musicAction: MusicAction.pause.rawValue,
+            Key.musicLowerLevel: 0.2,
         ])
     }
 
@@ -75,8 +83,13 @@ final class Settings {
         if bool(Key.awayMuteMic) { resources += [.mic, .meetingAudio] }
         if bool(Key.awayZoomVideoOff) { resources.append(.meetingVideo) }
         if bool(Key.awayPauseMedia) { resources.append(.media) }
+        if bool(Key.focusWhenAway) { resources.append(.focus) }
         return resources
     }
+
+    var focusDuringCalls: Bool { bool(Key.focusDuringCalls) }
+    var pauseOnUnplug: Bool { bool(Key.pauseOnUnplug) }
+    var lockProtect: Bool { bool(Key.lockProtect) }
 }
 
 /// UserDefaults keys, shared by the engine and the SwiftUI settings window.
@@ -104,4 +117,22 @@ enum SettingsKey {
     static let lastRunVersion = "lastRunVersion"
     static let hasShownWelcome = "hasShownWelcome"
     static let hasCompletedSetup = "hasCompletedSetup"
+    /// Headphones or AirPods disconnected (sound would come out of the speakers): pause, like an iPhone.
+    static let pauseOnUnplug = "pauseOnUnplug"
+    /// Screen locked, display asleep or Mac asleep: mute and pause until you unlock.
+    static let lockProtect = "lockProtect"
+    /// Run the "Focus on/off" shortcuts (Shortcuts app) during calls / while you're away.
+    static let focusDuringCalls = "focusDuringCalls"
+    static let focusWhenAway = "focusWhenAway"
+    static let focusOnShortcut = "focusOnShortcut"
+    static let focusOffShortcut = "focusOffShortcut"
+    /// Spotify and Music: pause them, or only lower their volume (MusicAction).
+    static let musicAction = "musicAction"
+    /// Their volume while lowered, 0…1.
+    static let musicLowerLevel = "musicLowerLevel"
+}
+
+/// What happens to Spotify and Music when a call starts or you step away.
+enum MusicAction: String {
+    case pause, lower
 }

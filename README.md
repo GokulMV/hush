@@ -257,3 +257,7 @@ Copyright © 2026 Gokul MV. Work by others that Over&Out uses (such as the YOLOv
 which the app downloads from Apple and doesn't include) is listed in
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
+The **name “Over&Out” and its icon are not covered by the GPL**: they're trademarks of Gokul MV. You
+can share the official app, and refer to it by name, but a modified version needs its own name and
+icon. See [TRADEMARKS.md](TRADEMARKS.md).
+
