@@ -1,4 +1,5 @@
 import XCTest
+import Carbon
 @testable import OverAndOut
 
 final class LedgerTests: XCTestCase {
@@ -267,5 +268,23 @@ final class CallDetectionTests: XCTestCase {
             XCTAssertTrue(AppClassifier.countsAsCall(micUser: app, ownBundleID: nil), app)
         }
         XCTAssertFalse(AppClassifier.countsAsCall(micUser: "com.gokulmv.overandout", ownBundleID: "com.gokulmv.overandout"))
+    }
+}
+
+final class ShortcutTests: XCTestCase {
+    func testDefaultsAreTheOriginalShortcuts() {
+        XCTAssertEqual(ShortcutAction.mic.defaultShortcut.display, "⌃⌥⌘M")
+        XCTAssertEqual(ShortcutAction.menu.defaultShortcut.display, "⌃⌥⌘H")
+        XCTAssertEqual(Set(ShortcutAction.allCases.map { $0.defaultShortcut.keyCode }).count, ShortcutAction.allCases.count,
+                       "no two actions share a default key")
+    }
+
+    func testDisplayAndMenuModifiers() {
+        let shortcut = KeyShortcut(keyCode: 46, modifiers: UInt32(cmdKey | shiftKey), key: "M")
+        XCTAssertEqual(shortcut.display, "⇧⌘M")
+        XCTAssertEqual(shortcut.menuModifiers, [.shift, .command])
+        XCTAssertEqual(shortcut.menuKey, "m")
+        XCTAssertEqual(KeyShortcut(keyCode: 96, modifiers: UInt32(controlKey), key: "F5").menuKey, "",
+                       "named keys aren't shown as menu letters")
     }
 }
