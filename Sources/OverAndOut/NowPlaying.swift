@@ -16,7 +16,7 @@ enum NowPlaying {
         /// Worth pausing: playing, and not the meeting itself.
         var pausable: Bool {
             guard playing else { return false }
-            if let bundleID, AppClassifier.isCallApp(bundleID) { return false }
+            if let bundleID, AppClassifier.isCallApp(bundleID) || IgnoredApps.contains(bundleID) { return false }
             let lowered = (title ?? "").lowercased()
             return !Self.meetingWords.contains { lowered.contains($0) }
         }

@@ -48,7 +48,8 @@ final class MediaController: @unchecked Sendable {
                 }
             }
         }
-        for bundleID in AppClassifier.scriptablePlayers where isRunning(bundleID) && !pausedPlayers.contains(bundleID) {
+        for bundleID in AppClassifier.scriptablePlayers
+        where isRunning(bundleID) && !pausedPlayers.contains(bundleID) && !IgnoredApps.contains(bundleID) {
             if allowLowering, Self.lowerInsteadOfPause, Self.lowerable.contains(bundleID) {
                 guard loweredPlayers[bundleID] == nil else { continue }
                 if let answer = run(bundleID, Self.lowerScript(to: Self.lowerLevel)), let before = Int(answer) {

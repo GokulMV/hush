@@ -4,6 +4,15 @@ Newest first. Each release needs a section here: `scripts/release.sh` uses it fo
 notes, and Hush shows it in "What's New" after an upgrade and in Settings → Updates.
 
 ## 1.2.0
+- **Shoulder-surfer guard** (optional, Settings → Presence): when the camera sees a second face for a
+  moment, Over&Out hides the apps you chose, or blurs every screen with a “Show My Screen” button.
+  Everything comes back 2 seconds after only you are in view. It only shows again apps it hid itself.
+- **Leave apps alone** (Settings → Calls & Media): pick apps Over&Out never touches, e.g. Discord while
+  gaming. Their microphone use isn't a call, their sound is never paused or turned down, and their
+  buttons are never pressed.
+- **Daily stats** (new Stats page, and a line in the menu): time away, calls, phone calls noticed, how
+  many times it saved you in a meeting, media paused and shoulder-surfers hidden from. Kept for 30 days
+  on your Mac only, never sent anywhere.
 - **Pause when headphones disconnect**, like an iPhone: unplug headphones or lose your AirPods and
   whatever is playing pauses instead of blasting from the speakers (press play to continue).
 - **Lock screen, lid closed or Mac asleep → muted and paused**, and given back when you unlock.

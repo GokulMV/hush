@@ -53,7 +53,7 @@ enum AppClassifier {
     /// ("com.apple.CoreSpeech" once kept a "call" going for good); Apple's calling services
     /// (FaceTime, iPhone calls) still count.
     static func countsAsCall(micUser id: String, ownBundleID: String?) -> Bool {
-        guard id != ownBundleID else { return false }
+        guard id != ownBundleID, !IgnoredApps.contains(id) else { return false }
         let lowered = id.lowercased()
         if ignoredMicPrefixes.contains(where: { lowered.hasPrefix($0.lowercased()) }) { return false }
         if lowered.hasPrefix("com.apple.") && !isCallApp(id) { return false }
@@ -63,7 +63,7 @@ enum AppClassifier {
     /// True when sound from `id` is something you'd want paused (a video, music), not a call or a system chime.
     /// Spotify/Music are excluded here because they are handled by AppleScript.
     static func isMediaSource(_ id: String) -> Bool {
-        if isCallApp(id) || scriptablePlayers.contains(id) { return false }
+        if isCallApp(id) || scriptablePlayers.contains(id) || IgnoredApps.contains(id) { return false }
         if id == unknownOutput || !id.hasPrefix("com.apple.") { return true }
         return appleMediaPrefixes.contains { id.hasPrefix($0) }
     }

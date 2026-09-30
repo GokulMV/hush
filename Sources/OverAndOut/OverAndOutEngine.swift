@@ -32,6 +32,8 @@ final class OverAndOutEngine {
     private let settings: Settings
     private let media = MediaController()
     private let sensor = PresenceSensor()
+    /// Hides chosen apps or blurs the screen when a second face appears (Settings → Presence).
+    let shoulderGuard = ShoulderGuard()
     private var tracker = PresenceTracker()
     private var applied: Set<Resource> = []
     private var outputSince: [String: Date] = [:]
@@ -64,6 +66,7 @@ final class OverAndOutEngine {
 
         sensor.onAnalysis = { [weak self] analysis, image in
             self?.previewHandler?(analysis, image)
+            self?.shoulderGuard.update(faceCount: analysis.faces.count, enabled: self?.settings.enabled ?? false)
             self?.handle(analysis.reading)
         }
         media.onBrowserProblem = { [weak self] blocked, notAuthorized in
@@ -135,6 +138,8 @@ final class OverAndOutEngine {
         if settings.enabled {
             updateCallPhase(now)
             updateSensing(now)
+            // The guard only sees while the camera runs: never leave things hidden without it.
+            if shoulderGuard.isActive && !sensor.isRunning { shoulderGuard.restore() }
         } else {
             suspend()
         }
@@ -176,6 +181,7 @@ final class OverAndOutEngine {
     }
 
     private func callStarted() {
+        Stats.callStarted()
         callPhase = .inCall
         callStartedAt = Date()
         MeetingControl.shared.prepare(meetingApps())
@@ -199,6 +205,7 @@ final class OverAndOutEngine {
     }
 
     private func callEnded() {
+        Stats.callEnded()
         recentCallApps = []
         callPhase = .idle
         callStartedAt = nil
@@ -262,6 +269,7 @@ final class OverAndOutEngine {
         if media.pause(keyTargetPlaying: plan.keyTarget, browsers: plan.browsers, browserKeyFallback: plan.keyFallback,
                        allowLowering: false) { // headphones out: really pause, even in "lower volume" mode
             media.forget() // nothing to resume later
+            Stats.headphonesPaused()
             Notifier.post("Paused: headphones disconnected", "Press play when you want the sound on the speakers.")
         }
     }
@@ -289,7 +297,7 @@ final class OverAndOutEngine {
         // flicker between videos). If the last reasons were your own switches (Keep watching,
         // Camera Preview), turning them off turns the camera off right away.
         let userOnly = !lastCameraReasons.isEmpty
-            && lastCameraReasons.allSatisfy { $0 == .keepWatching || $0 == .preview }
+            && lastCameraReasons.allSatisfy { $0 == .keepWatching || $0 == .preview || $0 == .shoulderGuard }
         lastCameraReasons = reasons
         cameraReasonsText = reasons.map(\.text).joined(separator: ", ")
 
@@ -324,12 +332,13 @@ final class OverAndOutEngine {
 
     /// Why the camera is needed right now (shown in the menu, so it's never a mystery).
     enum CameraReason: Equatable {
-        case preview, keepWatching, call(String), media(String), stepAway
+        case preview, keepWatching, shoulderGuard, call(String), media(String), stepAway
 
         var text: String {
             switch self {
             case .preview: return "Camera Preview is open"
             case .keepWatching: return "Keep watching is on"
+            case .shoulderGuard: return "the shoulder-surfer guard is on"
             case .call(let app): return "you're in a call (\(app))"
             case .media(let app): return "\(app) is playing"
             case .stepAway: return "waiting for you to come back"
@@ -345,6 +354,7 @@ final class OverAndOutEngine {
         var reasons: [CameraReason] = []
         if previewHandler != nil { reasons.append(.preview) }
         if settings.bool(Settings.Key.alwaysWatch) { reasons.append(.keepWatching) }
+        if ShoulderGuard.isEnabled { reasons.append(.shoulderGuard) }
         if callPhase == .inCall {
             let apps = callApps.isEmpty ? recentCallApps : callApps
             reasons.append(.call(apps.map(Self.displayName).sorted().first ?? "an app"))
@@ -359,7 +369,8 @@ final class OverAndOutEngine {
             reasons.append(.media(name))
         } else if let playing = outputSince.keys.sorted().first(where: {
             !$0.hasPrefix("pid:") && !quietOutputs.contains($0)
-                && (AppClassifier.isMediaSource($0) || AppClassifier.scriptablePlayers.contains($0))
+                && (AppClassifier.isMediaSource($0)
+                    || (AppClassifier.scriptablePlayers.contains($0) && !IgnoredApps.contains($0)))
         }) {
             reasons.append(.media(playing == AppClassifier.unknownOutput ? "Something" : Self.displayName(playing)))
         }
@@ -373,7 +384,15 @@ final class OverAndOutEngine {
         tracker.awayAfter = settings.awayDelay
         let effective: PresenceReading = (reading == .phoneToEar && !settings.phoneDetection) ? .present : reading
         guard let newState = tracker.update(effective, at: Date()) else { return }
+        let previous = presence
         presence = newState
+        // Stats: a new absence starts when you leave your desk (or pick up the phone) from being there.
+        if newState == .present {
+            Stats.cameBack()
+        } else if previous == .present {
+            let protectsCall = settings.awayResources.contains { [.mic, .meetingVideo].contains($0) }
+            Stats.steppedAway(phone: newState == .onPhone, inCall: callPhase == .inCall && protectsCall)
+        }
 
         // Engage the new reason before releasing the old one so nothing flickers back on in between.
         switch newState {
@@ -473,6 +492,9 @@ final class OverAndOutEngine {
         lastMicSeen = nil
         recentCallApps = []
         for reason in [Reason.ring, .call, .away, .phone, .locked] { release(reason) }
+        if shoulderGuard.isActive { shoulderGuard.restore() }
+        Stats.cameBack()
+        if callPhase == .idle { Stats.callEnded() }
     }
 
     /// Give everything back before quitting.
@@ -551,6 +573,7 @@ final class OverAndOutEngine {
             let plan = mediaPlan(steadyOnly: steadyOnly)
             changed = media.pause(keyTargetPlaying: plan.keyTarget, browsers: plan.browsers,
                                   browserKeyFallback: plan.keyFallback)
+            if changed { Stats.mediaPaused() }
         case .volume:
             VolumeDucker.duckInBackground(to: settings.duckLevel)
             changed = true
@@ -657,7 +680,9 @@ final class OverAndOutEngine {
             let keySafe = callPhase != .inCall || steadyOnly
             keyTarget = keySafe
             keyFallback = false
-            if !keySafe && BrowserMedia.enabled { browsers.formUnion(BrowserMedia.runningBrowsers) }
+            if !keySafe && BrowserMedia.enabled {
+                browsers.formUnion(BrowserMedia.runningBrowsers.filter { !IgnoredApps.contains($0) })
+            }
         }
         return (keyTarget, browsers.sorted(), keyFallback)
     }
@@ -745,6 +770,7 @@ final class OverAndOutEngine {
             }
         }
         var seen = Set<pid_t>()
-        return apps.map(\.processIdentifier).filter { seen.insert($0).inserted }
+        return apps.filter { !IgnoredApps.contains($0.bundleIdentifier ?? "") }
+            .map(\.processIdentifier).filter { seen.insert($0).inserted }
     }
 }
