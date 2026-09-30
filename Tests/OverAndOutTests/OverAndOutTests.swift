@@ -288,3 +288,25 @@ final class ShortcutTests: XCTestCase {
                        "named keys aren't shown as menu letters")
     }
 }
+
+@MainActor
+final class StatsAndRulesTests: XCTestCase {
+    func testDurationsReadNaturally() {
+        XCTAssertEqual(Stats.duration(0), "0 min")
+        XCTAssertEqual(Stats.duration(20), "under a minute")
+        XCTAssertEqual(Stats.duration(12 * 60), "12 min")
+        XCTAssertEqual(Stats.duration(65 * 60), "1 h 5 min")
+    }
+
+    func testIgnoredAppsCoverTheirHelpers() {
+        let saved = IgnoredApps.all
+        defer { IgnoredApps.save(saved) }
+        IgnoredApps.save([IgnoredApps.App(bundleID: "com.hnc.Discord", name: "Discord")])
+        XCTAssertTrue(IgnoredApps.contains("com.hnc.Discord"))
+        XCTAssertTrue(IgnoredApps.contains("com.hnc.Discord.helper"))
+        XCTAssertFalse(IgnoredApps.contains("com.hnc.DiscordPTB"), "a different app that merely starts the same")
+        XCTAssertFalse(AppClassifier.countsAsCall(micUser: "com.hnc.Discord.helper", ownBundleID: nil),
+                       "an ignored app's microphone use isn't a call")
+        XCTAssertFalse(AppClassifier.isMediaSource("com.hnc.Discord"), "an ignored app's sound isn't paused")
+    }
+}
