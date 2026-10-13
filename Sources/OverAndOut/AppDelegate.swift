@@ -205,7 +205,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
 
-        menu.addItem(item(settings.enabled ? "Turn Over&Out Off" : "Turn Over&Out On", #selector(toggleEnabled), shortcut: .enabled))
+        menu.addItem(icon(item(settings.enabled ? "Turn Over&Out Off" : "Turn Over&Out On", #selector(toggleEnabled), shortcut: .enabled), "power"))
         menu.addItem(.separator())
         if settings.enabled {
             menu.addItem(info(callLine))
@@ -225,38 +225,44 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             menu.addItem(.separator())
         }
 
-        menu.addItem(item(MicMuter.isMuted ? "Unmute Microphone" : "Mute Microphone", #selector(toggleMic), shortcut: .mic))
-        menu.addItem(item(engine.panicActive ? "End Panic Mode" : "Panic: Mute, Video Off, Pause", #selector(togglePanic), shortcut: .panic))
+        menu.addItem(icon(item(MicMuter.isMuted ? "Unmute Microphone" : "Mute Microphone", #selector(toggleMic), shortcut: .mic),
+                           MicMuter.isMuted ? "mic" : "mic.slash"))
+        menu.addItem(icon(item(engine.panicActive ? "End Panic Mode" : "Panic: Mute, Video Off, Pause", #selector(togglePanic), shortcut: .panic),
+                           "exclamationmark.octagon"))
 
         menu.addItem(.separator())
         menu.addItem(info(cameraStatusLine))
-        menu.addItem(item(settings.cameraActive ? "Turn Over&Out Camera Off" : "Turn Over&Out Camera On", #selector(toggleCamera), shortcut: .camera))
+        menu.addItem(icon(item(settings.cameraActive ? "Turn Over&Out Camera Off" : "Turn Over&Out Camera On", #selector(toggleCamera), shortcut: .camera),
+                           settings.cameraActive ? "video.slash" : "video"))
         let pauses = [15, 30, 60, 120].map { minutes -> NSMenuItem in
             let menuItem = item(minutes < 60 ? "\(minutes) minutes" : minutes == 60 ? "1 hour" : "\(minutes / 60) hours",
                                 #selector(pauseCamera(_:)), modifiers: [])
             menuItem.representedObject = minutes
             return menuItem
         }
-        menu.addItem(submenu("Pause Over&Out Camera For", pauses))
+        menu.addItem(icon(submenu("Pause Over&Out Camera For", pauses), "pause.circle"))
 
         menu.addItem(.separator())
         if !Permissions.accessibilityGranted {
-            menu.addItem(item("⚠️ Allow Accessibility (for meeting camera/mute & media keys) — shows as on? click to fix…", #selector(openAccessibility), modifiers: []))
+            menu.addItem(icon(item("Allow Accessibility (for meeting camera/mute & media keys) — shows as on? click to fix…", #selector(openAccessibility), modifiers: []),
+                               "exclamationmark.triangle.fill", color: .systemOrange))
         }
         let cameraStatus = PresenceSensor.authorization
         if settings.cameraActive, cameraStatus == .denied || cameraStatus == .restricted {
-            menu.addItem(item("⚠️ Allow Camera (for presence detection)…", #selector(openCamera), modifiers: []))
+            menu.addItem(icon(item("Allow Camera (for presence detection)…", #selector(openCamera), modifiers: []),
+                               "exclamationmark.triangle.fill", color: .systemOrange))
         }
         if let version = updates.availableVersion {
-            menu.addItem(item("⬆️ Update Available: Over&Out \(version)…", #selector(openUpdates), modifiers: []))
+            menu.addItem(icon(item("Update Available: Over&Out \(version)…", #selector(openUpdates), modifiers: []),
+                               "arrow.down.circle.fill", color: .systemBlue))
         }
-        menu.addItem(item("Setup Assistant…", #selector(openSetup), modifiers: []))
-        menu.addItem(item("Test Meeting Controls…", #selector(testMeetingControls), modifiers: []))
-        menu.addItem(item("Camera Preview (Test Detection)…", #selector(openCameraPreview), modifiers: []))
-        menu.addItem(item("Settings…", #selector(openSettings), key: ",", modifiers: .command))
-        menu.addItem(item("Check for Updates…", #selector(checkForUpdates), modifiers: []))
-        menu.addItem(item("About Over&Out", #selector(openAbout), modifiers: []))
-        menu.addItem(item("Quit Over&Out", #selector(quit), key: "q", modifiers: .command))
+        menu.addItem(icon(item("Setup Assistant…", #selector(openSetup), modifiers: []), "checklist"))
+        menu.addItem(icon(item("Test Meeting Controls…", #selector(testMeetingControls), modifiers: []), "stethoscope"))
+        menu.addItem(icon(item("Camera Preview (Test Detection)…", #selector(openCameraPreview), modifiers: []), "camera.viewfinder"))
+        menu.addItem(icon(item("Settings…", #selector(openSettings), key: ",", modifiers: .command), "gearshape"))
+        menu.addItem(icon(item("Check for Updates…", #selector(checkForUpdates), modifiers: []), "arrow.triangle.2.circlepath"))
+        menu.addItem(icon(item("About Over&Out", #selector(openAbout), modifiers: []), "info.circle"))
+        menu.addItem(icon(item("Quit Over&Out", #selector(quit), key: "q", modifiers: .command), "xmark.circle"))
     }
 
     private var callLine: String {
@@ -322,6 +328,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         for child in items { menu.addItem(child) }
         parent.submenu = menu
         return parent
+    }
+
+    /// Every clickable item gets an SF Symbol, as macOS 26 menus do (it adds one to "Settings…" by
+    /// itself, which looked out of place as the only icon).
+    private func icon(_ item: NSMenuItem, _ symbol: String, color: NSColor? = nil) -> NSMenuItem {
+        var image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
+        if let color, let base = image {
+            image = base.withSymbolConfiguration(.init(paletteColors: [color]))
+        }
+        item.image = image
+        return item
     }
 
     /// The shortcuts from Settings → General (⌃⌥⌘ + letter unless you changed them).

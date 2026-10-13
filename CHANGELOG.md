@@ -3,6 +3,10 @@
 Newest first. Each release needs a section here: `scripts/release.sh` uses it for the GitHub release
 notes, and Hush shows it in "What's New" after an upgrade and in Settings → Updates.
 
+## 1.3.1
+- The menu's items all have icons now. macOS 26 added a gear to “Settings…” by itself, which looked out of
+  place as the only one.
+
 ## 1.3.0
 - **Sound routing** (new Sound page in Settings, macOS 14.2 or later): send each app's sound to the
   device you choose, for example Spotify to your Bluetooth headset, a movie player to wired earphones,
