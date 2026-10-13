@@ -214,10 +214,10 @@ private final class ActiveRoute {
         deviceUID = device.uid
 
         // 1. Tap the app's processes; silence them on the normal output while tapped.
-        let description = CATapDescription(stereoMixdownOfProcesses: processes.map { NSNumber(value: $0) })
+        let description = CATapDescription(stereoMixdownOfProcesses: processes)
         description.name = "Over&Out: \(label)"
         description.isPrivate = true
-        description.muteBehavior = .mutedWhenTapped
+        description.muteBehavior = CATapMuteBehavior.mutedWhenTapped
         var status = AudioHardwareCreateProcessTap(description, &tapID)
         guard status == noErr else { throw RouteError(step: "Tapping \(label)", status: status) }
 
