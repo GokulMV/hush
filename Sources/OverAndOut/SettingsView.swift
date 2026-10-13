@@ -3,13 +3,14 @@ import ServiceManagement
 import SwiftUI
 
 enum SettingsTab: Hashable, CaseIterable {
-    case general, presence, calls, stats, permissions, updates, about
+    case general, presence, calls, sound, stats, permissions, updates, about
 
     var title: String {
         switch self {
         case .general: return "General"
         case .presence: return "Presence"
         case .calls: return "Calls & Media"
+        case .sound: return "Sound"
         case .stats: return "Stats"
         case .permissions: return "Permissions"
         case .updates: return "Updates"
@@ -22,6 +23,7 @@ enum SettingsTab: Hashable, CaseIterable {
         case .general: return "gearshape"
         case .presence: return "person.crop.circle"
         case .calls: return "phone"
+        case .sound: return "hifispeaker.2"
         case .stats: return "chart.bar"
         case .permissions: return "lock.shield"
         case .updates: return "arrow.down.circle"
@@ -82,6 +84,7 @@ struct SettingsView: View {
             case .general: generalTab
             case .presence: presenceTab
             case .calls: callsTab
+            case .sound: SoundRoutingView()
             case .stats: StatsView()
             case .permissions: permissionsTab
             case .updates: UpdatesView(model: updates)

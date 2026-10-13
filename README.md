@@ -112,6 +112,15 @@ the *Camera sees:* line shows what the latest frame was read as (you / no one / 
   JavaScript from Apple Events* in that browser, a developer setting, so Over&Out never asks for it unless you
   switch this on. Without it, browser meetings still get the system-wide mic mute.
 
+## Sound routing (macOS 14.2+)
+
+Settings → **Sound** sends each app's sound where you want it: Spotify to a Bluetooth headset, VLC to
+wired earphones, everything else on the speakers. It uses Core Audio process taps: the app's sound is
+tapped (and silenced on the normal output) and played on the chosen device through a private aggregate
+device. It's per app, not per browser tab. macOS asks to allow *System Audio Recording* once; the sound
+only passes through and nothing is recorded. A disconnected device, a quit app or a silent route
+simply means the app plays normally.
+
 ## Install with Homebrew
 
 Over&Out needs macOS 13 (Ventura) or later. From version 1.1.13 one app runs natively on both

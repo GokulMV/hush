@@ -55,6 +55,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        SoundRouter.shared.stopAll() // apps play normally again straight away
         engine.shutdown()
     }
 

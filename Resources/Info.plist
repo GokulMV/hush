@@ -26,6 +26,8 @@
 	<true/>
 	<key>NSAppleEventsUsageDescription</key>
 	<string>Over&amp;Out pauses Spotify and Music when you step away or a call starts, and resumes them when you are back.</string>
+	<key>NSAudioCaptureUsageDescription</key>
+	<string>Over&amp;Out plays an app's sound on the speakers or headphones you chose for it (Settings → Sound). The sound is passed straight through; nothing is recorded or saved.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Over&amp;Out looks at the camera on this Mac, on-device, to notice when you walk away or hold a phone to your ear. No frames are saved or sent anywhere.</string>
 </dict>

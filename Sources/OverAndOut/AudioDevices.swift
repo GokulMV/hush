@@ -43,6 +43,47 @@ enum AudioDevices {
         return AudioActivity(micUsers: mic, outputUsers: output, perProcess: true)
     }
 
+    // MARK: Sound routing (SoundRouter)
+
+    struct AudioProcess {
+        let objectID: AudioObjectID
+        let bundleID: String
+        let pid: pid_t
+        let isPlaying: Bool
+    }
+
+    /// Every process Core Audio knows about, with whether it's playing sound right now.
+    @available(macOS 14.2, *)
+    static func processes() -> [AudioProcess] {
+        objectList(system, kAudioHardwarePropertyProcessObjectList).compactMap { process in
+            let pid = Int32(bitPattern: uint32(process, kAudioProcessPropertyPID) ?? 0)
+            guard let bundleID = string(process, kAudioProcessPropertyBundleID), !bundleID.isEmpty else { return nil }
+            return AudioProcess(objectID: process, bundleID: bundleID, pid: pid,
+                                isPlaying: (uint32(process, kAudioProcessPropertyIsRunningOutput) ?? 0) != 0)
+        }
+    }
+
+    struct OutputDevice: Hashable, Identifiable {
+        let objectID: AudioDeviceID
+        let uid: String
+        let name: String
+        var id: String { uid }
+    }
+
+    /// Speakers, headphones, AirPods, Bluetooth, USB and display outputs that are connected now
+    /// (not virtual or aggregate devices, including Over&Out's own routing devices).
+    static var outputDevices: [OutputDevice] {
+        let skipped: Set<UInt32> = [kAudioDeviceTransportTypeAggregate, kAudioDeviceTransportTypeAutoAggregate]
+        return objectList(system, kAudioHardwarePropertyDevices).compactMap { device in
+            guard hasStreams(device, scope: kAudioObjectPropertyScopeOutput),
+                  !skipped.contains(uint32(device, kAudioDevicePropertyTransportType) ?? 0),
+                  let uid = string(device, kAudioDevicePropertyDeviceUID) else { return nil }
+            return OutputDevice(objectID: device, uid: uid, name: name(device))
+        }
+    }
+
+    static var defaultOutputUID: String? { defaultOutput.flatMap(uid) }
+
     // MARK: Devices
 
     static var inputDevices: [AudioDeviceID] {

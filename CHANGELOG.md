@@ -3,6 +3,15 @@
 Newest first. Each release needs a section here: `scripts/release.sh` uses it for the GitHub release
 notes, and Hush shows it in "What's New" after an upgrade and in Settings → Updates.
 
+## 1.3.0
+- **Sound routing** (new Sound page in Settings, macOS 14.2 or later): send each app's sound to the
+  device you choose, for example Spotify to your Bluetooth headset, a movie player to wired earphones,
+  and everything else, your meetings included, on the Mac's speakers. If a device isn't connected, the
+  app simply plays where it normally would, and the rule starts working again when it's back.
+  macOS asks once to allow System Audio Recording for this; the sound only passes through, nothing is
+  recorded. If an app goes silent through a route, Over&Out removes the route so you always hear it.
+  Routing is per app (not per browser tab).
+
 ## 1.2.0
 - **Shoulder-surfer guard** (optional, Settings → Presence): when the camera sees a second face for a
   moment, Over&Out hides the apps you chose, or blurs every screen with a “Show My Screen” button.

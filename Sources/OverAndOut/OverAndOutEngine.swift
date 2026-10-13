@@ -39,6 +39,7 @@ final class OverAndOutEngine {
     private var outputSince: [String: Date] = [:]
     private var perProcessAudio = true
     private var lastMicSeen: Date?
+    private var lastRouteCheck = Date.distantPast
     /// The call apps of the current call, remembered while their mic is off (muted).
     private(set) var recentCallApps: Set<String> = []
     private var callStartedAt: Date?
@@ -131,8 +132,15 @@ final class OverAndOutEngine {
         callApps = activity.micUsers.filter {
             AppClassifier.countsAsCall(micUser: $0, ownBundleID: ownBundleID) && Self.isForegroundCaller($0)
         }
-        for id in activity.outputUsers where outputSince[id] == nil { outputSince[id] = now }
-        outputSince = outputSince.filter { activity.outputUsers.contains($0.key) }
+        // Over&Out itself plays sound while it routes an app (Settings → Sound): that's not media.
+        let outputUsers = activity.outputUsers.filter { $0 != ownBundleID }
+        for id in outputUsers where outputSince[id] == nil { outputSince[id] = now }
+        outputSince = outputSince.filter { outputUsers.contains($0.key) }
+
+        if now.timeIntervalSince(lastRouteCheck) >= 2 {
+            lastRouteCheck = now
+            if !SoundRoutes.all.isEmpty { SoundRouter.shared.reconcileInBackground() }
+        }
 
         noticeCameraPauseEnding()
         if settings.enabled {
