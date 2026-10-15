@@ -316,11 +316,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
 
     // MARK: Menu builders
 
+    /// A status line. Lines are written with a leading emoji ("📞  No call"); in the menu it becomes
+    /// a matching SF Symbol, so status lines line up with the action items' icons.
     private func info(_ title: String) -> NSMenuItem {
-        let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
+        var text = title
+        var symbol: (name: String, color: NSColor?)?
+        if let gap = title.range(of: "  "), title.distance(from: title.startIndex, to: gap.lowerBound) <= 3 {
+            let emoji = String(title[..<gap.lowerBound])
+            if let mapped = Self.statusSymbols[emoji] {
+                symbol = mapped
+                text = String(title[gap.upperBound...])
+            }
+        }
+        let item = NSMenuItem(title: text, action: nil, keyEquivalent: "")
         item.isEnabled = false
+        if let symbol { _ = icon(item, symbol.name, color: symbol.color) }
         return item
     }
+
+    private static let statusSymbols: [String: (name: String, color: NSColor?)] = [
+        "📞": ("phone", nil),
+        "📳": ("iphone.radiowaves.left.and.right", .systemOrange),
+        "👀": ("eye", nil),
+        "📷": ("camera", nil),
+        "🔇": ("mic.slash.fill", .systemGreen),
+        "🔴": ("mic.fill", .systemRed),
+        "🎙": ("mic", nil),
+        "🎵": ("music.note", nil),
+        "⏸": ("pause.circle", nil),
+        "⚠️": ("exclamationmark.triangle.fill", .systemOrange),
+        "🙈": ("eye.slash.fill", .systemPurple),
+        "📊": ("chart.bar", nil),
+    ]
 
     private func submenu(_ title: String, _ items: [NSMenuItem]) -> NSMenuItem {
         let parent = NSMenuItem(title: title, action: nil, keyEquivalent: "")

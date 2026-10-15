@@ -3,6 +3,10 @@
 Newest first. Each release needs a section here: `scripts/release.sh` uses it for the GitHub release
 notes, and Hush shows it in "What's New" after an upgrade and in Settings → Updates.
 
+## 1.3.2
+- The menu's status lines use matching icons instead of emoji, so they line up with the action items
+  (a red mic while it's live in a call, a green one while muted).
+
 ## 1.3.1
 - The menu's items all have icons now. macOS 26 added a gear to “Settings…” by itself, which looked out of
   place as the only one.
