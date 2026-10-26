@@ -8,7 +8,7 @@ jobs:
   macos:
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Test
         run: swift test
       - name: Build app bundle (Apple Silicon + Intel, the way a Mac without full Xcode does it)
@@ -17,7 +17,7 @@ jobs:
           lipo -archs "build/Over&Out.app/Contents/MacOS/OverAndOut" | tee /dev/stderr | grep -q "x86_64 arm64\|arm64 x86_64"
       - name: Zip
         run: ditto -c -k --keepParent "build/Over&Out.app" build/OverAndOut.zip
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: OverAndOut
           path: build/OverAndOut.zip

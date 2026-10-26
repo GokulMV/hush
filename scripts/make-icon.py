@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Draws the Over&Out app icon and writes Resources/AppIcon.icns (needs Pillow: pip install pillow).
+"""Draws the Over&Out app icon and writes Resources/AppIcon.icns (needs Pillow: python3 -m pip install -r scripts/requirements.txt).
 
 Design: an indigo→teal rounded square (macOS icon grid) with a white sound waveform
 cut by a diagonal slash: "sound, silenced".

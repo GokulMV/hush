@@ -1,0 +1,12 @@
+# Keeps the GitHub Actions used by the build and release workflows up to date (security fixes
+# included): Dependabot opens a pull request when a new version comes out.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: pip
+    directory: /scripts
+    schedule:
+      interval: weekly
