@@ -137,13 +137,12 @@ struct SettingsView: View {
 
             Section {
                 ForEach(ShortcutAction.allCases) { ShortcutRecorderRow(action: $0) }
-            } header: {
-                Text("Keyboard shortcuts")
-            } footer: {
                 Group {
                     Text("Click a shortcut, then press the new one (with ⌃, ⌥ or ⌘). They work from any app.")
                 }
                 .footerNote()
+            } header: {
+                Text("Keyboard shortcuts")
             }
 
             Section {
@@ -177,13 +176,12 @@ struct SettingsView: View {
                 .disabled(!presenceEnabled)
                 Toggle("Detect when I pick up my phone", isOn: $phoneDetection)
                     .disabled(!presenceEnabled)
-            } header: {
-                Text("Presence")
-            } footer: {
                 Group {
                     Text("The camera is analysed on this Mac and nothing is saved. Its green light is on while Over&Out is watching.")
                 }
                 .footerNote()
+            } header: {
+                Text("Presence")
             }
 
             Section("When I step away or pick up my phone") {
@@ -226,25 +224,23 @@ struct SettingsView: View {
                         Text("\(Int(musicLowerLevel * 100))%").monospacedDigit().frame(width: 40, alignment: .trailing)
                     }
                 }
-            } header: {
-                Text("Music")
-            } footer: {
                 Group {
                     Text("When a call starts or you step away. Lowering keeps the music going quietly and puts the volume back afterwards; videos in browsers and other players are still paused.")
                 }
                 .footerNote()
+            } header: {
+                Text("Music")
             }
 
             Section {
                 Toggle("Pause when headphones or AirPods disconnect", isOn: $pauseOnUnplug)
                 Toggle("Mute and pause while the screen is locked or the Mac sleeps", isOn: $lockProtect)
-            } header: {
-                Text("Also")
-            } footer: {
                 Group {
                     Text("Like an iPhone, unplugging doesn't resume by itself: press play when you want sound from the speakers. Locking, closing the lid or sleeping mutes your mic and pauses media, and gives both back when you unlock.")
                 }
                 .footerNote()
+            } header: {
+                Text("Also")
             }
 
             FocusSection()
@@ -257,13 +253,12 @@ struct SettingsView: View {
 
             Section {
                 Toggle("Control meetings and videos inside browser tabs", isOn: $browserScripting)
-            } header: {
-                Text("Browsers")
-            } footer: {
                 Group {
                     Text("Lets Over&Out press Google Meet's camera and mute buttons and pause every playing tab, on every desktop. Needs “Allow JavaScript from Apple Events” in each browser; the Setup Assistant can switch it on for you.")
                 }
                 .footerNote()
+            } header: {
+                Text("Browsers")
             }
         }
         .formStyle(.grouped)
@@ -284,13 +279,12 @@ struct SettingsView: View {
                         Button("Open") { Permissions.open(row.settingsURL) }
                     }
                 }
-            } header: {
-                Text("Permissions")
-            } footer: {
                 Group {
                     Text("✅ allowed   ❌ denied   ⚪️ not asked yet   ➖ not applicable")
                 }
                 .footerNote()
+            } header: {
+                Text("Permissions")
             }
             Section {
                 if needsSetup {
@@ -397,8 +391,8 @@ struct SettingsView: View {
 }
 
 extension View {
-    /// Section footers: full width and left-aligned. By default macOS sets them in a narrow,
-    /// right-aligned column, which looked cut off.
+    /// A section's explanation, as its last row: full width and left-aligned. (In a section *footer*
+    /// macOS keeps text to the narrow label column, which looked cut off.)
     func footerNote() -> some View {
         self.font(.callout)
             .foregroundStyle(.secondary)

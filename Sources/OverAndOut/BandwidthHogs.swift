@@ -112,13 +112,12 @@ struct BandwidthHogsSection: View {
                 apps.append(app)
                 BandwidthHogs.saveApps(apps)
             }
-        } header: {
-            Text("During calls, pause these apps")
-        } footer: {
             Group {
                 Text("Frees your internet for the call: these apps are frozen while a call is on (uploads and downloads stop) and carry on where they left off when it ends. A frozen app doesn't respond if you click it during the call. Never the app you're calling in, and never longer than 3 hours.")
             }
             .footerNote()
+        } header: {
+            Text("During calls, pause these apps")
         }
     }
 }

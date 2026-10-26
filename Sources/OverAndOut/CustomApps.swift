@@ -167,13 +167,12 @@ struct CustomAppsSection: View {
                 Text(message).font(.callout).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
-        } header: {
-            Text("Other call apps")
-        } footer: {
             Group {
                 Text("Zoom, Teams, Meet, FaceTime, Webex, Slack, Discord, Skype and WhatsApp are built in. Add any other app here. If an app's camera or mute isn't switched off when you step away, start a call in it (camera and mic on) and use Learn Buttons to pick its buttons. As everywhere, Over&Out only switches off what's on, and only switches back on what it switched off: if you turned your camera off or muted yourself, it stays that way.")
             }
             .footerNote()
+        } header: {
+            Text("Other call apps")
         }
         .sheet(item: $model.learning) { app in
             LearnButtonsSheet(app: app, buttons: model.learnedButtons) { camera, mute in

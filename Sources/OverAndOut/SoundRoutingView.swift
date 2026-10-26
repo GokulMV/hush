@@ -13,7 +13,6 @@ struct SoundRoutingView: View {
             Section {
                 Toggle("Send apps' sound to the devices below", isOn: $enabled)
                     .onChange(of: enabled) { _ in SoundRouter.shared.reconcileInBackground() }
-            } footer: {
                 Group {
                     Text("For example Spotify on your Bluetooth headset, a movie player on wired earphones, and everything else (your meetings too) on the Mac's speakers. If a device isn't connected, that app simply plays where it normally would.")
                 }
@@ -50,13 +49,12 @@ struct SoundRoutingView: View {
                 }
                 Button("Add App…") { add() }
                     .disabled(devices.isEmpty)
-            } header: {
-                Text("Rules")
-            } footer: {
                 Group {
                     Text("Works per app, not per browser tab: a video and a meeting in the same browser can't go to different devices (use two browsers, or the meeting's own app). Meeting apps (Zoom, Teams, Meet, FaceTime) can also choose their speaker in their own settings.")
                 }
                 .footerNote()
+            } header: {
+                Text("Rules")
             }
 
             Section {
@@ -65,13 +63,12 @@ struct SoundRoutingView: View {
                     Button("Try Again") { SoundRouter.shared.retry(); SoundRouter.shared.reconcileInBackground() }
                     Spacer()
                 }
-            } header: {
-                Text("Permission")
-            } footer: {
                 Group {
                     Text("macOS asks once to allow Over&Out under System Audio Recording, because routing takes the app's sound to play it elsewhere. Nothing is recorded or saved. If an app goes quiet through a route, Over&Out removes the route at once so you always hear it.")
                 }
                 .footerNote()
+            } header: {
+                Text("Permission")
             }
         }
         .formStyle(.grouped)

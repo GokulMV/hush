@@ -121,13 +121,12 @@ struct StatsView: View {
                     tile("\(today.shoulderGuards)", "shoulder-surfers hidden from")
                 }
                 .padding(.vertical, 6)
-            } header: {
-                Text("Today")
-            } footer: {
                 Group {
                     Text("“Saved you” counts the times you stepped away or took a phone call during a meeting and Over&Out muted you and turned your camera off.")
                 }
                 .footerNote()
+            } header: {
+                Text("Today")
             }
 
             Section("Last 7 days") {
