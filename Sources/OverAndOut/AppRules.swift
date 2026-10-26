@@ -75,7 +75,10 @@ struct IgnoredAppsSection: View {
         } header: {
             Text("Leave these apps alone")
         } footer: {
-            Text("Over&Out never touches these: using their microphone isn't a call, their sound is never paused or turned down, and their buttons are never pressed. Handy for Discord while gaming, a music app you always want playing, or recording software.")
+            Group {
+                Text("Over&Out never touches these: using their microphone isn't a call, their sound is never paused or turned down, and their buttons are never pressed. Handy for Discord while gaming, a music app you always want playing, or recording software.")
+            }
+            .footerNote()
         }
     }
 }

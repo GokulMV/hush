@@ -273,9 +273,12 @@ struct UpdatesView: View {
             } header: {
                 Text("Updates")
             } footer: {
-                Text(AppInfo.installedWithHomebrew
-                     ? "Installed with Homebrew: updates install through Homebrew and Over&Out reopens by itself."
-                     : "Updates open the download page. Installing with Homebrew (brew install --cask gokulmv/tap/over-and-out) makes updating one click.")
+                Group {
+                    Text(AppInfo.installedWithHomebrew
+                         ? "Installed with Homebrew: updates install through Homebrew and Over&Out reopens by itself."
+                         : "Updates open the download page. Installing with Homebrew (brew install --cask gokulmv/tap/over-and-out) makes updating one click.")
+                }
+                .footerNote()
             }
 
             Section { status }

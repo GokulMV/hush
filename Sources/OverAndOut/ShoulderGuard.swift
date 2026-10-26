@@ -177,7 +177,10 @@ struct ShoulderGuardSection: View {
         } header: {
             Text("Shoulder-surfer guard")
         } footer: {
-            Text("Uses the camera like presence detection (on this Mac only, nothing saved). A second face has to stay in view for a moment; everything comes back 2 seconds after it's gone. While this is on, the camera stays on (green light). A photo or poster with a face behind you counts as a person: use Camera Preview to check.")
+            Group {
+                Text("Uses the camera like presence detection (on this Mac only, nothing saved). A second face has to stay in view for a moment; everything comes back 2 seconds after it's gone. While this is on, the camera stays on (green light). A photo or poster with a face behind you counts as a person: use Camera Preview to check.")
+            }
+            .footerNote()
         }
     }
 }

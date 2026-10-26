@@ -6,6 +6,9 @@ notes, and Hush shows it in "What's New" after an upgrade and in Settings → Up
 ## 1.3.2
 - The menu's status lines use matching icons instead of emoji, so they line up with the action items
   (a red mic while it's live in a call, a green one while muted).
+- Settings' explanations under each section use the full width, left-aligned, instead of a narrow
+  right-aligned column that looked cut off.
+- With Over&Out switched off, the menu no longer says its camera “waits for a call or video”.
 
 ## 1.3.1
 - The menu's items all have icons now. macOS 26 added a gear to “Settings…” by itself, which looked out of

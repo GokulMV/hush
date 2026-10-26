@@ -285,6 +285,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     }
 
     private var cameraStatusLine: String {
+        if !settings.enabled { return "📷  Over&Out camera: off while Over&Out is off" }
         if !settings.presenceEnabled { return "📷  Over&Out camera: off" }
         if let until = settings.cameraPausedUntil {
             return "📷  Over&Out camera: paused until \(until.formatted(date: .omitted, time: .shortened))"

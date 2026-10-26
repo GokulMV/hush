@@ -140,7 +140,10 @@ struct SettingsView: View {
             } header: {
                 Text("Keyboard shortcuts")
             } footer: {
-                Text("Click a shortcut, then press the new one (with ⌃, ⌥ or ⌘). They work from any app.")
+                Group {
+                    Text("Click a shortcut, then press the new one (with ⌃, ⌥ or ⌘). They work from any app.")
+                }
+                .footerNote()
             }
 
             Section {
@@ -177,7 +180,10 @@ struct SettingsView: View {
             } header: {
                 Text("Presence")
             } footer: {
-                Text("The camera is analysed on this Mac and nothing is saved. Its green light is on while Over&Out is watching.")
+                Group {
+                    Text("The camera is analysed on this Mac and nothing is saved. Its green light is on while Over&Out is watching.")
+                }
+                .footerNote()
             }
 
             Section("When I step away or pick up my phone") {
@@ -223,7 +229,10 @@ struct SettingsView: View {
             } header: {
                 Text("Music")
             } footer: {
-                Text("When a call starts or you step away. Lowering keeps the music going quietly and puts the volume back afterwards; videos in browsers and other players are still paused.")
+                Group {
+                    Text("When a call starts or you step away. Lowering keeps the music going quietly and puts the volume back afterwards; videos in browsers and other players are still paused.")
+                }
+                .footerNote()
             }
 
             Section {
@@ -232,7 +241,10 @@ struct SettingsView: View {
             } header: {
                 Text("Also")
             } footer: {
-                Text("Like an iPhone, unplugging doesn't resume by itself: press play when you want sound from the speakers. Locking, closing the lid or sleeping mutes your mic and pauses media, and gives both back when you unlock.")
+                Group {
+                    Text("Like an iPhone, unplugging doesn't resume by itself: press play when you want sound from the speakers. Locking, closing the lid or sleeping mutes your mic and pauses media, and gives both back when you unlock.")
+                }
+                .footerNote()
             }
 
             FocusSection()
@@ -246,7 +258,10 @@ struct SettingsView: View {
             } header: {
                 Text("Browsers")
             } footer: {
-                Text("Lets Over&Out press Google Meet's camera and mute buttons and pause every playing tab, on every desktop. Needs “Allow JavaScript from Apple Events” in each browser; the Setup Assistant can switch it on for you.")
+                Group {
+                    Text("Lets Over&Out press Google Meet's camera and mute buttons and pause every playing tab, on every desktop. Needs “Allow JavaScript from Apple Events” in each browser; the Setup Assistant can switch it on for you.")
+                }
+                .footerNote()
             }
         }
         .formStyle(.grouped)
@@ -270,7 +285,10 @@ struct SettingsView: View {
             } header: {
                 Text("Permissions")
             } footer: {
-                Text("✅ allowed   ❌ denied   ⚪️ not asked yet   ➖ not applicable")
+                Group {
+                    Text("✅ allowed   ❌ denied   ⚪️ not asked yet   ➖ not applicable")
+                }
+                .footerNote()
             }
             Section {
                 if needsSetup {
@@ -373,5 +391,17 @@ struct SettingsView: View {
             openAtLogin = isOn
             Notifier.post("Couldn't change Open at Login", error.localizedDescription)
         }
+    }
+}
+
+extension View {
+    /// Section footers: full width and left-aligned. By default macOS sets them in a narrow,
+    /// right-aligned column, which looked cut off.
+    func footerNote() -> some View {
+        self.font(.callout)
+            .foregroundStyle(.secondary)
+            .multilineTextAlignment(.leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .fixedSize(horizontal: false, vertical: true)
     }
 }

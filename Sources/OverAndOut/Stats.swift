@@ -124,7 +124,10 @@ struct StatsView: View {
             } header: {
                 Text("Today")
             } footer: {
-                Text("“Saved you” counts the times you stepped away or took a phone call during a meeting and Over&Out muted you and turned your camera off.")
+                Group {
+                    Text("“Saved you” counts the times you stepped away or took a phone call during a meeting and Over&Out muted you and turned your camera off.")
+                }
+                .footerNote()
             }
 
             Section("Last 7 days") {

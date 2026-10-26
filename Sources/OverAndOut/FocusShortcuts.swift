@@ -87,7 +87,10 @@ struct FocusSection: View {
         } header: {
             Text("Focus")
         } footer: {
-            Text("macOS lets apps switch a Focus only through Shortcuts. Once: in the Shortcuts app make a shortcut named “\(onName)” with the action “Set Focus” → Do Not Disturb (or any Focus) → On, and one named “\(offName)” with “Set Focus” → Off. Over&Out runs them for you.")
+            Group {
+                Text("macOS lets apps switch a Focus only through Shortcuts. Once: in the Shortcuts app make a shortcut named “\(onName)” with the action “Set Focus” → Do Not Disturb (or any Focus) → On, and one named “\(offName)” with “Set Focus” → Off. Over&Out runs them for you.")
+            }
+            .footerNote()
         }
         .onAppear { if duringCalls || whenAway { check() } }
     }
