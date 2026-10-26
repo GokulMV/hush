@@ -16,6 +16,8 @@ enum Resource: String, CaseIterable, Hashable {
     case mic, meetingAudio, meetingVideo, media, volume
     /// A Focus (Do Not Disturb…) switched on through the Shortcuts app.
     case focus
+    /// Bandwidth-heavy apps you chose, frozen during calls (BandwidthHogs).
+    case hogs
 }
 
 /// Reference-counts holds per resource so overlapping reasons never undo each other early:

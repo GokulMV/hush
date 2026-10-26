@@ -56,6 +56,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
 
     func applicationWillTerminate(_ notification: Notification) {
         SoundRouter.shared.stopAll() // apps play normally again straight away
+        BandwidthHogs.thaw()          // and nothing stays frozen
         engine.shutdown()
     }
 
@@ -220,6 +221,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             if let paused = engine.describe(.media) { menu.addItem(info("⏸  Media paused: \(paused)")) }
             if let video = engine.describe(.meetingVideo) { menu.addItem(info("📷  Meeting camera off: \(video)")) }
             for mic in engine.unmutableMics { menu.addItem(info("⚠️  Can't mute “\(mic)”")) }
+            if !BandwidthHogs.frozenNames.isEmpty {
+                menu.addItem(info("⏸  Paused for the call: \(BandwidthHogs.frozenNames.joined(separator: ", "))"))
+            }
             if engine.shoulderGuard.isActive { menu.addItem(info("🙈  Someone's looking: screen protected")) }
             menu.addItem(info(Stats.summary))
             menu.addItem(.separator())

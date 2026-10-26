@@ -62,6 +62,7 @@ final class OverAndOutEngine {
     init() {
         settings = Settings.shared
         // Undo anything a previous crash left behind.
+        BandwidthHogs.thaw()
         MicMuter.unmute()
         VolumeDucker.restoreInBackground()
 
@@ -146,6 +147,7 @@ final class OverAndOutEngine {
         if settings.enabled {
             updateCallPhase(now)
             updateSensing(now)
+            _ = BandwidthHogs.thawIfTooLong()
             // The guard only sees while the camera runs: never leave things hidden without it.
             if shoulderGuard.isActive && !sensor.isRunning { shoulderGuard.restore() }
         } else {
@@ -197,6 +199,7 @@ final class OverAndOutEngine {
         if settings.callPauseMedia { resources.append(.media) }
         if settings.callMuteOnJoin { resources += [.mic, .meetingAudio] }
         if settings.focusDuringCalls { resources.append(.focus) }
+        if !BandwidthHogs.apps.isEmpty { resources.append(.hogs) }
         engage(.call, resources)
         release(.ring) // answered: stop ducking so you can hear the caller
         if settings.callMuteOnJoin {
@@ -444,7 +447,7 @@ final class OverAndOutEngine {
             release(.panic)
         } else {
             engage(.panic, Resource.allCases.filter {
-                $0 != .focus || settings.focusDuringCalls || settings.awayResources.contains(.focus)
+                $0 != .hogs && ($0 != .focus || settings.focusDuringCalls || settings.awayResources.contains(.focus))
             })
             Notifier.post("Panic mode on", "Mic muted, camera off, media paused. Press ⌃⌥⌘P to undo.")
         }
@@ -588,6 +591,12 @@ final class OverAndOutEngine {
         case .focus:
             FocusShortcuts.turnOn()
             changed = true
+        case .hogs:
+            changed = BandwidthHogs.freeze(except: callApps.union(recentCallApps))
+            if changed {
+                Notifier.post("Paused for your call: \(BandwidthHogs.frozenNames.joined(separator: ", "))",
+                              "They carry on when the call ends.")
+            }
         }
         if changed {
             applied.insert(resource)
@@ -612,6 +621,8 @@ final class OverAndOutEngine {
             VolumeDucker.restoreInBackground()
         case .focus:
             FocusShortcuts.turnOff()
+        case .hogs:
+            BandwidthHogs.thaw()
         }
     }
 

@@ -3,6 +3,13 @@
 Newest first. Each release needs a section here: `scripts/release.sh` uses it for the GitHub release
 notes, and Hush shows it in "What's New" after an upgrade and in Settings → Updates.
 
+## 1.3.3
+- **Pause bandwidth hogs during calls** (Settings → Calls & Media): pick apps such as Dropbox, Google
+  Drive, a torrent client or Steam, and they're frozen while a call is on, so their uploads and downloads
+  stop and your call gets the connection. They carry on where they left off when the call ends. The app
+  you're calling in is never frozen, nothing stays frozen longer than 3 hours, and quitting Over&Out (or
+  even a crash, at the next launch) un-freezes everything. The menu shows what's paused.
+
 ## 1.3.2
 - The menu's status lines use matching icons instead of emoji, so they line up with the action items
   (a red mic while it's live in a call, a green one while muted).

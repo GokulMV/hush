@@ -249,6 +249,8 @@ struct SettingsView: View {
 
             FocusSection()
 
+            BandwidthHogsSection()
+
             IgnoredAppsSection()
 
             CustomAppsSection()
